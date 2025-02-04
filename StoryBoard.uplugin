@@ -1,0 +1,23 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "FriendlyName": "Story Board",
+    "Description": "",
+    "Category": "Other",
+    "CreatedBy": "stoner",
+    "CanContainContent": true,
+    "Modules": [
+      {
+        "Name": "StoryBoardRuntime",
+        "Type": "Runtime",
+        "LoadingPhase": "Default"
+      },
+      {
+        "Name": "StoryBoardEditor",
+        "Type": "Editor",
+        "LoadingPhase": "Default"
+      }
+    ]
+  }
+  
