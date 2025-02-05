@@ -36,6 +36,7 @@ void UStoryBoardEditorSubsystem::Deinitialize() {
 }
 
 UStoryBoardSubsystem* UStoryBoardEditorSubsystem::GetStoryBoardSubsystem() {
+
     if (StoryBoardPtr == nullptr) {
         UWorld* world = GEditor->GetEditorWorldContext().World();
         check(world);
@@ -78,6 +79,18 @@ void UStoryBoardEditorSubsystem::OnExitEdMode() {
     GLevelEditorModeTools().DeactivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
 }
 
+void UStoryBoardEditorSubsystem::PreviousScenario() {
+    if (!isEdMode) return;
+    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Previous Scenario"));
+    EdActiveScenarioChangeEvent.Execute();
+}
+
+void UStoryBoardEditorSubsystem::NextScenario() {
+    if (!isEdMode) return;
+    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Next Scenario"));
+    EdActiveScenarioChangeEvent.Execute();
+}
+
 void UStoryBoardEditorSubsystem::SetupScenario(UStoryScenario* Scenario) {
     if (GEditor->PlayWorld) {
         return;
@@ -88,7 +101,7 @@ void UStoryBoardEditorSubsystem::SetupScenario(UStoryScenario* Scenario) {
         return;
     }
 
-    StoryBoardPtr->CurrentScenario = Scenario;
+    GetStoryBoardSubsystem()->CurrentScenario = Scenario;
 
     ExecuteCommands(Scenario->ConsoleCommands);
 
@@ -98,15 +111,15 @@ void UStoryBoardEditorSubsystem::SetupScenario(UStoryScenario* Scenario) {
 }
 
 UStoryScenario* UStoryBoardEditorSubsystem::GetDefaultScenario() {
-    return StoryBoardPtr->DefaultScenario;
+    return GetStoryBoardSubsystem()->DefaultScenario;
 }
 
 UStoryScenario* UStoryBoardEditorSubsystem::GetCurrentScenario() {
-    return StoryBoardPtr->CurrentScenario;
+    return GetStoryBoardSubsystem()->CurrentScenario;
 }
 
 void UStoryBoardEditorSubsystem::SetDefaultScenario(UStoryScenario* in) {
-    StoryBoardPtr->SetDefaultScenario(in);
+    GetStoryBoardSubsystem()->SetDefaultScenario(in);
 }
 
 void UStoryBoardEditorSubsystem::ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands) {

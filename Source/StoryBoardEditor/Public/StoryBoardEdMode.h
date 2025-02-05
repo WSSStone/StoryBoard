@@ -54,6 +54,5 @@ protected:
     virtual void RequestModeUITabs() override;
 
 private:
-    TSharedPtr<SWidget> ToolkitWidget;
     TSharedPtr<SWidget> ViewportOverlayWidget;
 };

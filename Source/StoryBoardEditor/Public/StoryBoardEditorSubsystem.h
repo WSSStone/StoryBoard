@@ -7,13 +7,19 @@
 
 #include "StoryBoardEditorSubsystem.generated.h"
 
+DECLARE_DELEGATE(FEdActiveScenarioChange)
+
 UCLASS()
 class STORYBOARDEDITOR_API UStoryBoardEditorSubsystem : public UEditorSubsystem {
     GENERATED_BODY()
 public:
+    FEdActiveScenarioChange EdActiveScenarioChangeEvent;
+
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
     virtual void Deinitialize() override;
+
+    FORCEINLINE UStoryBoardSubsystem* GetStoryBoardSubsystem();
 
     UFUNCTION(BlueprintCallable)
     void SetupDefaultScenario();
@@ -50,6 +56,10 @@ public:
 
     void OnExitEdMode();
 
+    void PreviousScenario();
+
+    void NextScenario();
+
     // listen to ed mode selected/activated scenario.
     void OnScenarioChange(UStoryScenario* inp);
 #pragma endregion
@@ -61,11 +71,11 @@ private:
 
     UStoryBoardSubsystem* StoryBoardPtr;
 
-    FORCEINLINE UStoryBoardSubsystem* GetStoryBoardSubsystem();
-
     void HandleOnMapOpened(const FString& Filename, bool bAsTemplate);
 
     void OnCurrentLevelChanged(ULevel* InNewLevel, ULevel* InOldLevel, UWorld* InWorld);
+
+    TSharedPtr<SWidget> ViewportOverlayWidget;
 
     friend class UStoryBoardEdMode;
 };
