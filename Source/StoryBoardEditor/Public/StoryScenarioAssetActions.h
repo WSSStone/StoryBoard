@@ -2,7 +2,7 @@
 
 #include "AssetTypeActions_Base.h"
 
-class FStroyScenarioAssetActions : public FAssetTypeActions_Base {
+class FStoryScenarioAssetActions : public FAssetTypeActions_Base {
 public:
     static void RegisterAssetTypeActions();
     static void UnregisterAssetTypeActions();

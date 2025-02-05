@@ -1,19 +1,19 @@
 #include "StoryScenarioAssetActions.h"
 #include "StoryScenario.h"
 
-void FStroyScenarioAssetActions::RegisterAssetTypeActions()
+void FStoryScenarioAssetActions::RegisterAssetTypeActions()
 {
     IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-    AssetTools.RegisterAssetTypeActions(MakeShareable(new FStroyScenarioAssetActions));
+    AssetTools.RegisterAssetTypeActions(MakeShareable(new FStoryScenarioAssetActions));
 }
 
-void FStroyScenarioAssetActions::UnregisterAssetTypeActions()
+void FStoryScenarioAssetActions::UnregisterAssetTypeActions()
 {
     IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-    AssetTools.UnregisterAssetTypeActions(MakeShareable(new FStroyScenarioAssetActions));
+    AssetTools.UnregisterAssetTypeActions(MakeShareable(new FStoryScenarioAssetActions));
 }
 
-UClass* FStroyScenarioAssetActions::GetSupportedClass() const
+UClass* FStoryScenarioAssetActions::GetSupportedClass() const
 {
     return UStoryScenario::StaticClass();
 }
