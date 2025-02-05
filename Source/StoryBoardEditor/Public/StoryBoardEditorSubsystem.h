@@ -37,26 +37,31 @@ public:
     // Setup data layer editor status: bEditorVisible, bLoaded
     void SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses);
 
-#pragma region Editor GUI
+#pragma region Editor Mode
+    UE_DEPRECATED(5.4, "No longer standalone window. Use EditorMode instead.")
     void RegisterEntry();
 
     void OnLevelEditorCreatedEvent(TSharedPtr<ILevelEditor> Editor);
 
-    UE_DEPRECATED(5.5, "No longer use this.")
+    UE_DEPRECATED(5.4, "No longer use this.")
     TSharedRef<SDockTab> SummonScenarioEditor();
-#pragma endregion
 
-#pragma region Scenario Change
-    // listen to ed mode activate scenario.
+    void OnEnterEdMode();
+
+    void OnExitEdMode();
+
+    // listen to ed mode selected/activated scenario.
     void OnScenarioChange(UStoryScenario* inp);
 #pragma endregion
     
 private:
     bool isEdMode { false };
 
-    FORCEINLINE UStoryBoardSubsystem* GetStoryBoardSubsystem();
+    TSoftObjectPtr<UStoryScenario> CurrentScenario;
 
     UStoryBoardSubsystem* StoryBoardPtr;
+
+    FORCEINLINE UStoryBoardSubsystem* GetStoryBoardSubsystem();
 
     void HandleOnMapOpened(const FString& Filename, bool bAsTemplate);
 

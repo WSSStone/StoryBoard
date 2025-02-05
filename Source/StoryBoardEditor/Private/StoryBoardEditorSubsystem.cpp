@@ -63,7 +63,19 @@ void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
 }
 
 void UStoryBoardEditorSubsystem::OnScenarioChange(UStoryScenario* inp) {
-    SetupScenario(inp);
+    if (CurrentScenario.IsValid() && inp == CurrentScenario.Get()) {
+        SetupScenario(inp);
+    }
+}
+
+void UStoryBoardEditorSubsystem::OnEnterEdMode() {
+    GLevelEditorModeTools().ActivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
+}
+
+void UStoryBoardEditorSubsystem::OnExitEdMode() {
+    // do other pre exit ed mode stuff here
+
+    GLevelEditorModeTools().DeactivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
 }
 
 void UStoryBoardEditorSubsystem::SetupScenario(UStoryScenario* Scenario) {

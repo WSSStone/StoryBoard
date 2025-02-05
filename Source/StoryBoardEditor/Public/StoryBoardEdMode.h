@@ -25,8 +25,17 @@ public:
     virtual void ActorSelectionChangeNotify() override;
     // virtual TMap<FName, TArray<TSharedPtr<FUICommandInfo>>> GetModeCommands() const override;
 
+    void BroadcastTryExitEdMode();
+
+    DECLARE_EVENT(UStoryBoardEdMode, FTryExitEdModeEvent);
+    
+    void BroadcastTryExitEdModeEvent();
+
 protected:
     virtual void CreateToolkit() override;
+
+private:
+    FTryExitEdModeEvent TryExitEdModeEvent;
 };
 
 class FStoryBoardEdToolkit : public FModeToolkit {
@@ -38,8 +47,13 @@ public:
     virtual FName GetToolkitFName() const override;
     virtual FText GetBaseToolkitName() const override;
     virtual class FEdMode* GetEditorMode() const override;
-    virtual TSharedPtr<SWidget> GetInlineContent() const override;
+
+protected:
+    bool bUsesToolkitBuilder { false };
+
+    virtual void RequestModeUITabs() override;
 
 private:
     TSharedPtr<SWidget> ToolkitWidget;
+    TSharedPtr<SWidget> ViewportOverlayWidget;
 };

@@ -106,10 +106,10 @@ struct FWeatherParams {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    FTimecode TimeOfDay {11, 30, 00, 00, false};
+    FTimecode TimeOfDay { 11, 30, 00, 00, false };
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float CloudCoverage {1.4f};
+    float CloudCoverage { 1.4f };
 
     FWeatherParams() = default;
 };
@@ -142,7 +142,8 @@ class STORYBOARDRUNTIME_API UStoryScenario : public UDataAsset {
 public:
     UStoryScenario() {};
 
-    static FStoryScenarioEvent OnStoryScenarioChanged; // for edit mode
+    // for edit mode
+    static FStoryScenarioEvent OnStoryScenarioChanged;
 
     // The name of the SceneSetting.
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
