@@ -93,7 +93,7 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
                 .Padding(FMargin(0.f, 0.f, 8.f, 0.f))
                 [
                     SNew(SImage)
-                    .Image(FSlateIconFinder::FindIconBrushForClass(ALevelInstance::StaticClass()))
+                    .Image(FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode").GetIcon())
                 ]
                 + SHorizontalBox::Slot()
                 .AutoWidth()
@@ -101,7 +101,7 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
                 .Padding(FMargin(0.f, 0.f, 8.f, 0.f))
                 [
                     SNew(STextBlock)
-                    .Text(FText::FromString("Text Block"))
+                    .Text(FText::FromString("Story Board"))
                 ]
                 + SHorizontalBox::Slot()
                 .AutoWidth()
@@ -111,7 +111,7 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
                     .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
                     .TextStyle(FAppStyle::Get(), "DialogButtonText")
                     .Text(LOCTEXT("ExitEdit", "Exit"))
-                    .ToolTipText(LOCTEXT("ExitTooltip", "Exit Level Instance Edit"))
+                    .ToolTipText(LOCTEXT("ExitTooltip", "Exit Story Board View"))
                     .HAlign(HAlign_Center)
                     .OnClicked_Lambda([&edSubsys]() {
                         edSubsys->OnExitEdMode();
