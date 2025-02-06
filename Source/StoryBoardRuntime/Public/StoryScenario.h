@@ -142,9 +142,6 @@ class STORYBOARDRUNTIME_API UStoryScenario : public UDataAsset {
 public:
     UStoryScenario() {};
 
-    // for edit mode
-    static FStoryScenarioEvent OnStoryScenarioChanged;
-
     // The name of the SceneSetting.
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FText Name;
@@ -170,6 +167,9 @@ public:
     FWeatherStatus WeatherStatus;
 
 #if WITH_EDITOR
+    // for edit mode
+    FStoryScenarioEvent OnStoryScenarioChanged;
+
     virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 };
