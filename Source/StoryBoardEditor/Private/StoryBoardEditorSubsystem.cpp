@@ -1,16 +1,24 @@
+#pragma warning(disable:4834)
+
 #include "StoryBoardEditorSubsystem.h"
 #include "StoryBoardEdMode.h"
 
-#include "EditorModeRegistry.h"
+#include "Kismet/GameplayStatics.h"
+#include "EditorModeManager.h"
+#include "EditorModes.h"
 #include "UnrealEdGlobals.h"
 #include "Editor/UnrealEdEngine.h"
 #include "DataLayer/DataLayerEditorSubsystem.h"
-#include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "Subsystems/ActorEditorContextSubsystem.h"
+#include "LevelEditor.h"
+#include "LevelEditorViewport.h"
+#include "Selection.h"
 
 #define LOCTEXT_NAMESPACE "StoryBoardEditorSubsystem"
 
 DEFINE_LOG_CATEGORY_STATIC(LogStoryBoardEditor, Log, All);
+
+FNodeSelectedEvent UStoryBoardEditorSubsystem::EdNodeSelectedEvent;
 
 void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
@@ -28,15 +36,18 @@ void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection
 void UStoryBoardEditorSubsystem::Deinitialize() {
     UE_LOG(LogStoryBoardEditor, Display, TEXT("UStoryBoardEditorSubsystem Deinitializing."));
 
-    FEditorModeRegistry::Get().UnregisterMode(FName(TEXT("StoryBoardEditMode")));
+    if (StoryNodeHelper.IsValid()) {
+        StoryNodeHelper.Release();
+    }
+
     FWorldDelegates::OnCurrentLevelChanged.RemoveAll(this);
+    FEditorDelegates::ChangeEditorMode.RemoveAll(this);
     FEditorDelegates::OnMapOpened.RemoveAll(this);
 
     Super::Deinitialize();
 }
 
 UStoryBoardSubsystem* UStoryBoardEditorSubsystem::GetStoryBoardSubsystem() {
-
     if (StoryBoardPtr == nullptr) {
         UWorld* world = GEditor->GetEditorWorldContext().World();
         check(world);
@@ -46,9 +57,20 @@ UStoryBoardSubsystem* UStoryBoardEditorSubsystem::GetStoryBoardSubsystem() {
     return StoryBoardPtr;
 }
 
+void UStoryBoardEditorSubsystem::CreateStoryNodeHelper() {
+    if (StoryNodeHelper.IsValid()) {
+        StoryNodeHelper.Release();
+    }
+
+    StoryNodeHelper = MakeUnique<FStoryNodeHelper>(GEditor->GetEditorWorldContext().World());
+}
+
 void UStoryBoardEditorSubsystem::HandleOnMapOpened(const FString& Filename, bool bAsTemplate) {
     FString shortName = FPackageName::GetShortName(Filename);
+    
     GetStoryBoardSubsystem();
+
+    CreateStoryNodeHelper();
 
     UE_LOG(LogStoryBoardEditor, Display, TEXT("HandleOnMapOpened, ShortName: %s, UStoryBoardSubsystem: %p"),
         *shortName, StoryBoardPtr);
@@ -70,25 +92,110 @@ void UStoryBoardEditorSubsystem::OnScenarioChange(UStoryScenario* inp) {
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {
-    GLevelEditorModeTools().ActivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
+    CreateStoryNodeHelper();
+
+    // assign a default StoryNode actor
+
+    TArray<UObject*> selectedActors;
+    GEditor->GetSelectedActors()->GetSelectedObjects(AStoryNode::StaticClass(), selectedActors);
+    if (!selectedActors.IsEmpty()) {
+        StoryNodeHelper->SelectedNode = Cast<AStoryNode>(selectedActors[0]);
+        return;
+    }
+
+    AActor* actor = UGameplayStatics::GetActorOfClass(GEditor->GetEditorWorldContext().World(), AStoryNode::StaticClass());
+    StoryNodeHelper->SelectedNode = Cast<AStoryNode>(actor);
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
-    // do other pre exit ed mode stuff here
+    if (StoryNodeHelper.IsValid()) {
+        StoryNodeHelper.Release();
+    }
+}
 
+void UStoryBoardEditorSubsystem::EnterEdMode() {
+    GLevelEditorModeTools().ActivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
+}
+
+void UStoryBoardEditorSubsystem::ExitEdMode() {
     GLevelEditorModeTools().DeactivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
 }
 
-void UStoryBoardEditorSubsystem::PreviousScenario() {
-    if (!isEdMode) return;
+auto FocusActor = [](AActor* actor) {
+    FBox bounds = actor->GetComponentsBoundingBox(true);
+
+    FLevelEditorViewportClient* viewport = static_cast<FLevelEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+    if (viewport) {
+        viewport->FocusViewportOnBox(bounds);
+        viewport->SetViewportType(ELevelViewportType::LVT_Perspective);
+        viewport->Invalidate();
+    }
+
+    GEditor->SelectNone(false, true);
+    GEditor->SelectActor(actor, true, false, true, true);
+};
+
+FReply UStoryBoardEditorSubsystem::PreviousNode() {
     UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Previous Scenario"));
-    EdActiveScenarioChangeEvent.Execute();
+
+    // Point Current to Previous
+    if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->PrevPoints.IsEmpty()) {
+        SetCurrentNode(StoryNodeHelper->SelectedNode->PrevPoints[0].Get());
+        FocusActor(StoryNodeHelper->SelectedNode.Get());
+    }
+
+    return FReply::Handled();
 }
 
-void UStoryBoardEditorSubsystem::NextScenario() {
-    if (!isEdMode) return;
+FReply UStoryBoardEditorSubsystem::NextNode() {
     UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Next Scenario"));
-    EdActiveScenarioChangeEvent.Execute();
+
+    // Point Current to Next
+    if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->NextPoints.IsEmpty()) {
+        SetCurrentNode(StoryNodeHelper->SelectedNode->NextPoints[0].Get());
+        FocusActor(StoryNodeHelper->SelectedNode.Get());
+    }
+
+    return FReply::Handled();
+}
+
+FReply UStoryBoardEditorSubsystem::UISelectNode(AStoryNode* Node) {
+    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Node"));
+
+    SetCurrentNode(Node);
+    FocusActor(Node);
+
+    return FReply::Handled();
+}
+
+void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
+    if (StoryNodeHelper->SelectedNode.IsValid() && Node == StoryNodeHelper->SelectedNode.Get()) {
+        return;
+    }
+
+    StoryNodeHelper->SelectedNode = Node;
+
+    if (StoryNodeHelper->SelectedNode.IsValid() && EdNodeSelectedEvent.IsBound()) {
+        SetCurrentScenario(StoryNodeHelper->SelectedNode->Scenario.Get());
+        EdNodeSelectedEvent.Broadcast(Node);
+    }
+}
+
+void UStoryBoardEditorSubsystem::SetCurrentScenario(UStoryScenario* Scenario) {
+    if (CurrentScenario.IsValid() && Scenario == CurrentScenario.Get()) {
+        return;
+    }
+
+    if (CurrentScenario.IsValid() && CurrentScenario->OnStoryScenarioChanged.IsBound()) {
+        CurrentScenario->OnStoryScenarioChanged.Unbind();
+    }
+
+    CurrentScenario = Scenario;
+
+    if (CurrentScenario.IsValid()) {
+        SetupScenario(CurrentScenario.Get());
+        CurrentScenario->OnStoryScenarioChanged.BindUObject(this, &UStoryBoardEditorSubsystem::OnScenarioChange);
+    }
 }
 
 void UStoryBoardEditorSubsystem::SetupScenario(UStoryScenario* Scenario) {
@@ -218,12 +325,56 @@ void UStoryBoardEditorSubsystem::SetupDataLayerStatus(const TArray<FDataLayerSta
     for (const FDataLayerStatus& dataLayerStatus : DataLayerStatuses) {
         UDataLayerInstance* inst = dataLayerEditorSubsystem->GetDataLayerInstance(dataLayerStatus.DataLayerAsset.Get());
         if (inst == nullptr) {
-            UE_LOG(LogStoryBoardEditor, Warning, TEXT("DataLayerInst for %s is nullptr."), *dataLayerStatus.DataLayerAsset->GetFName().ToString());
             continue;
         }
 
         dataLayerEditorSubsystem->SetDataLayerVisibility(inst, dataLayerStatus.bEditorVisible);
         dataLayerEditorSubsystem->SetDataLayerIsLoadedInEditor(inst, dataLayerStatus.bLoaded, true);
+    }
+}
+
+FStoryNodeHelper::FStoryNodeHelper(UWorld* World) {
+    AllocateStoryNodes(World);
+
+    FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
+            if (!actors.IsEmpty()) AllocateStoryNodes(actors[0]->GetWorld());
+        });
+    FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+}
+
+FStoryNodeHelper::~FStoryNodeHelper() {
+    FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnNewActorsPlaced.RemoveAll(this);
+
+    StoryNodes.Empty();
+}
+
+void FStoryNodeHelper::OnStoryNodeAddedOrRemoved() {
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    AllocateStoryNodes(World);
+}
+
+void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
+    TArray<AActor*> actors;
+    UGameplayStatics::GetAllActorsOfClass(World, AStoryNode::StaticClass(), actors);
+    for (auto actor : actors) {
+        AStoryNode* node = Cast<AStoryNode>(actor);
+        if (!node) {
+            continue;
+        }
+
+        StoryNodes.Add(node);
+        
+        // set up edMode-only property PrevPoints
+        for (auto child : node->NextPoints) {
+            if (!child->PrevPoints.Contains(node)) {
+                child->PrevPoints.Add(node);
+            }
+        }
     }
 }
 

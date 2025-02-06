@@ -4,11 +4,15 @@
 #include "StoryScenarioAssetActions.h"
 #include "StoryBoardEditorStyle.h"
 
+#include "EditorModeRegistry.h"
+
 #define LOCTEXT_NAMESPACE "StoryBoardEditorModule"
 
 void FStoryBoardEditorModule::StartupModule()
 {
     FStoryBoardEditorStyle::Initialize();
+
+    // EditorMode is registered with LevelEditor's EdMode allocation
 
     FStoryBoardCommands::Register();
 
@@ -20,6 +24,8 @@ void FStoryBoardEditorModule::ShutdownModule()
     FStoryScenarioAssetActions::UnregisterAssetTypeActions();
 
     FStoryBoardCommands::Unregister();
+
+    FEditorModeRegistry::Get().UnregisterMode(FName(TEXT("StoryBoardEditMode")));
 
     FStoryBoardEditorStyle::Shutdown();
 }
