@@ -9,6 +9,7 @@
 #include "Engine/StreamableManager.h"
 #include "ObjectTools.h"
 #include "Styling/SlateIconFinder.h"
+#include "ThumbnailRendering/ThumbnailManager.h"
 
 
 #define LOCTEXT_NAMESPACE "StoryBoardEditorModeToolkit"
@@ -57,20 +58,6 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
     auto detailView = editModule.CreateDetailView(detailsViewArgs);
     auto scenario = edSubsys->GetCurrentScenario();
     detailView->SetObject(scenario);
-
-    FMenuBuilder MenuBuilder(true, nullptr);
-    MenuBuilder.AddMenuEntry(
-        scenario->Name,
-        scenario->Tooltip,
-        FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass()),
-        FUIAction(
-            FExecuteAction::CreateLambda([scenario]() {
-                GEditor->EditObject(scenario);
-                })
-        ),
-        NAME_None,
-        EUserInterfaceActionType::Button);
-    TSharedRef<SWidget> widget = MenuBuilder.MakeWidget();
 
     auto currentView = CreateCurrnetNodeView();
     auto nextListView = CreateNextNodesView();
@@ -254,22 +241,37 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
     UStoryScenario* nodeScenario = node ? node->Scenario.Get() : nullptr;
-
     FText btnName = FText::FromString("Empty");
     FString btnToolTip = FString("Add Scenario");
-    const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon("StoryBoardEditor.AddStoryScenario128").GetIcon();
+    FString iconName = FString("StoryBoardEditor.AddStoryScenario128");
+    const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon(FName(iconName)).GetIcon();
 
     UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
     if (!templateScenario) {
         templateScenario = BFSPrevForScenario(node);
     }
 
-    if (nodeScenario) {
+    TSharedRef<SWidget> iconWidget = SNew(SImage)
+        .Image_Lambda([btnBrush]() { return btnBrush; });
+
+    if (nodeScenario != nullptr) {
         btnName = nodeScenario->Name;
         btnToolTip = FString("Edit Scenario");
-        btnBrush = FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode128").GetIcon();
+
+        const int32 ThumbnailSize = 128;
+        TSharedPtr<FAssetThumbnail> thumbnail = MakeShareable(new FAssetThumbnail(nodeScenario, ThumbnailSize, ThumbnailSize, UThumbnailManager::Get().GetSharedThumbnailPool()));
+
+        if (thumbnail.IsValid()) {
+            FAssetThumbnailConfig ThumbnailConfig;
+            ThumbnailConfig.bAllowFadeIn = false;
+            ThumbnailConfig.bAllowHintText = false;
+            ThumbnailConfig.bAllowRealTimeOnHovered = false;
+            ThumbnailConfig.bForceGenericThumbnail = false;
+
+            iconWidget = thumbnail->MakeThumbnailWidget(ThumbnailConfig);
+        }
     }
-    
+
     auto widget = SNew(SVerticalBox)
         + SVerticalBox::Slot()
         .AutoHeight()
@@ -289,12 +291,8 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
             SNew(SButton)
             .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
             .TextStyle(FAppStyle::Get(), "DialogButtonText")
-            .Text_Lambda([btnName]() {
-                return btnName;
-            })
-            .ToolTipText_Lambda([btnToolTip]() {
-                return FText::FromString(btnToolTip);
-            })
+            .Text_Lambda([btnName]() { return btnName; })
+            .ToolTipText_Lambda([btnToolTip]() { return FText::FromString(btnToolTip); })
             .HAlign(HAlign_Center)
             .VAlign(VAlign_Center)
             .OnClicked_Lambda([edSubsys, node, nodeScenario, templateScenario]() {
@@ -302,25 +300,72 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
                     FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
                     node->Scenario = LoadObject<UStoryScenario>(nullptr, *path);
                 }
-
                 if (node->Scenario.IsValid()) {
                     GEditor->EditObject(node->Scenario.Get());
                 }
-                
                 edSubsys->UISelectNode(node);
-
                 return FReply::Handled();
             })
             [
-                SNew(SImage)
-                .Image_Lambda([btnBrush]() {
-                    return btnBrush;
-                 })
+                iconWidget
             ]
         ];
 
     return widget;
 }
+
+TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, ImageSize Size) {
+    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+
+    UStoryScenario* nodeScenario = Node->Scenario.Get();
+
+    FString iconName = FString::Printf(TEXT("StoryBoardEditor.AddStoryScenario%d"), uint32(Size));
+    const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon(FName(iconName)).GetIcon();
+    UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
+    if (!templateScenario) {
+        templateScenario = BFSPrevForScenario(Node);
+    }
+
+    TSharedRef<SWidget> iconWidget = SNew(SImage)
+        .Image_Lambda([btnBrush]() { return btnBrush; });
+
+    if (nodeScenario != nullptr) {
+        const int32 ThumbnailSize = 64;
+        TSharedPtr<FAssetThumbnail> thumbnail = MakeShareable(new FAssetThumbnail(nodeScenario, ThumbnailSize, ThumbnailSize, UThumbnailManager::Get().GetSharedThumbnailPool()));
+
+        if (thumbnail.IsValid()) {
+            FAssetThumbnailConfig ThumbnailConfig;
+            ThumbnailConfig.bAllowFadeIn = false;
+            ThumbnailConfig.bAllowHintText = false;
+            ThumbnailConfig.bAllowRealTimeOnHovered = false;
+            ThumbnailConfig.bForceGenericThumbnail = false;
+
+            iconWidget = thumbnail->MakeThumbnailWidget(ThumbnailConfig);
+        }
+    }
+
+    auto widget = SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Bottom)
+        .Padding(FMargin(0.0, 2.0, 0.0, 0.0))
+        [
+            SNew(STextBlock)
+            .Text(FText::FromString(Node->GetActorLabel()))
+        ]
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Bottom)
+        .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
+        [
+            iconWidget
+        ];
+
+    return widget;
+}
+
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
@@ -342,8 +387,10 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextNodesView() {
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjectPtr<AStoryNode>>& List) {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     FMenuBuilder MenuBuilder(true, nullptr);
+
     for (auto item : List) {
         FMenuEntryParams entryParams;
+
         entryParams.LabelOverride = FText::FromString(item->GetActorLabel());
         entryParams.ToolTipOverride = FText::FromString("Select Node");
         entryParams.IconOverride = FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass());
@@ -354,23 +401,9 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
         );
         entryParams.ExtensionHook = NAME_None;
         entryParams.UserInterfaceActionType = EUserInterfaceActionType::Button;
+        entryParams.EntryWidget = CreateNodeView(item.Get(), ImageSize::S20);
 
-        MenuBuilder.AddMenuEntry(
-#if 0
-            FText::FromString(item->GetActorLabel()),
-            FText::FromString("Selet Node"),
-            FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass()),
-            FUIAction(
-                FExecuteAction::CreateLambda([item, edSubsys]() {
-                    edSubsys->UISelectNode(item);
-                    })
-            ),
-            NAME_None,
-            EUserInterfaceActionType::Button
-#else
-            entryParams
-#endif
-        );
+        MenuBuilder.AddMenuEntry(entryParams);
     }
     return MenuBuilder.MakeWidget();
 }

@@ -25,12 +25,21 @@ protected:
 private:
     void ArrangeWidget();
 
+    enum class ImageSize : int32 {
+        S16 = 16,
+        S20 = 20,
+        S50 = 50,
+        S128 = 128,
+        S256 = 256
+    };
+
     TSharedPtr<SWidget> CreatePrevBtn();
     TSharedPtr<SWidget> CreateNextBtn();
     TSharedPtr<SWidget> CreateCurrnetNodeView();
     TSharedPtr<SWidget> CreatePrevNodesView();
     TSharedPtr<SWidget> CreateNextNodesView();
     TSharedPtr<SWidget> CreateNodeListView(const TArray<TObjectPtr<AStoryNode>>& List);
+    TSharedPtr<SWidget> CreateNodeView(AStoryNode* Node, ImageSize Size);
 
     TSharedPtr<SWidget> ViewportOverlayWidget;
 };
