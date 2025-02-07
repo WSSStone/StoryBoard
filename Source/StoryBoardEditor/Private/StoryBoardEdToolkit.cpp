@@ -86,7 +86,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     .AutoWidth()
                     .VAlign(VAlign_Bottom)
                     .HAlign(HAlign_Right)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 0.0))
+                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                     [
                         prevBtn.ToSharedRef()
                     ]
@@ -110,7 +110,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                             + SHorizontalBox::Slot()
                             .AutoWidth()
                             .HAlign(HAlign_Center)
-                            .VAlign(VAlign_Center)
+                            .VAlign(VAlign_Bottom)
                             [
                                 currentView.ToSharedRef()
                             ]
@@ -127,7 +127,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     .AutoWidth()
                     .VAlign(VAlign_Bottom)
                     .HAlign(HAlign_Left)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 0.0))
+                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                     [
                         nextBtn.ToSharedRef()
                     ]
@@ -221,15 +221,22 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
 
 auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
     TArray<AStoryNode*> stack {node};
+    TArray<AStoryNode*> history;
 
     // bfs searching prevs for closest scenario
     while (!stack.IsEmpty()) {
         AStoryNode* curr = stack.Pop();
+        history.Add(curr);
+
         if (curr->Scenario.Get()) {
             return curr->Scenario.Get();
         }
         for (auto prev : curr->PrevPoints) {
-            stack.Add(prev.Get());
+            AStoryNode* prevNode = prev.Get();
+            if (history.Contains(curr)) {
+                continue;
+            }
+            stack.Add(prevNode);
         }
     }
 
@@ -240,7 +247,11 @@ auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
-    UStoryScenario* nodeScenario = node ? node->Scenario.Get() : nullptr;
+    if (!node) {
+        return SNew(SBorder);
+    }
+
+    UStoryScenario* nodeScenario = node->Scenario.Get();
     FText btnName = FText::FromString("Empty");
     FString btnToolTip = FString("Add Scenario");
     FString iconName = FString("StoryBoardEditor.AddStoryScenario128");
@@ -289,12 +300,12 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
         .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
         [
             SNew(SButton)
-            .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
+            // .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
             .TextStyle(FAppStyle::Get(), "DialogButtonText")
             .Text_Lambda([btnName]() { return btnName; })
             .ToolTipText_Lambda([btnToolTip]() { return FText::FromString(btnToolTip); })
             .HAlign(HAlign_Center)
-            .VAlign(VAlign_Center)
+            .VAlign(VAlign_Bottom)
             .OnClicked_Lambda([edSubsys, node, nodeScenario, templateScenario]() {
                 if (!nodeScenario) {
                     FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
@@ -327,7 +338,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
     }
 
     TSharedRef<SWidget> iconWidget = SNew(SImage)
-        .Image_Lambda([btnBrush]() { return btnBrush; });
+    .Image_Lambda([btnBrush]() { return btnBrush; });
 
     if (nodeScenario != nullptr) {
         const int32 ThumbnailSize = 64;
@@ -349,7 +360,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
         .AutoHeight()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 2.0, 0.0, 0.0))
+        .Padding(FMargin(0.0, 2.0, 0.0, 2.0))
         [
             SNew(STextBlock)
             .Text(FText::FromString(Node->GetActorLabel()))
@@ -358,7 +369,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
         .AutoHeight()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
+        .Padding(0.0)
         [
             iconWidget
         ];
