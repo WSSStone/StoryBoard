@@ -1,6 +1,7 @@
 #include "StoryBoardEdMode.h"
 #include "StoryBoardEditorSubsystem.h"
 #include "StoryBoardEdToolkit.h"
+#include "StoryBoardEditorStyle.h"
 
 #include "Selection.h"
 
@@ -13,15 +14,14 @@ const FEditorModeID UStoryBoardEdMode::EM_StoryBoardEdModeId = TEXT("EM_StoryBoa
 UStoryBoardEdMode::UStoryBoardEdMode()
     : UEdMode() {
     Info = FEditorModeInfo(UStoryBoardEdMode::EM_StoryBoardEdModeId,
-        LOCTEXT("DirectorMode", "Story Board Edit Mode"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "DeveloperTools.MenuIcon"),
+        LOCTEXT("DirectorMode", "Story Board"),
+        FSlateIcon(FStoryBoardEditorStyle::GetStyleSetName(), "StoryBoardEditor.StoryBoardEdMode20"),
         true);
 }
 
 UStoryBoardEdMode::~UStoryBoardEdMode() {}
 
-void UStoryBoardEdMode::Enter()
-{
+void UStoryBoardEdMode::Enter() {
     UEdMode::Enter();
 
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
@@ -29,8 +29,7 @@ void UStoryBoardEdMode::Enter()
     edSubsys->isEdMode = true;
 }
 
-void UStoryBoardEdMode::Exit()
-{
+void UStoryBoardEdMode::Exit() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     edSubsys->isEdMode = false;
     edSubsys->EdNodeSelectedEvent.RemoveAll(Toolkit.Get());
@@ -39,8 +38,7 @@ void UStoryBoardEdMode::Exit()
     UEdMode::Exit();
 }
 
-bool UStoryBoardEdMode::UsesToolkits() const
-{
+bool UStoryBoardEdMode::UsesToolkits() const {
     return true;
 }
 

@@ -23,7 +23,7 @@ public class StoryBoardEditor : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-                "CoreUObject",
+				"CoreUObject",
 				"Engine",
 				"Slate",
 				"SlateCore", 

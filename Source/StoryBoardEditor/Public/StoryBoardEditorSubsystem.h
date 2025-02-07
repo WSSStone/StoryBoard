@@ -10,6 +10,7 @@
 #include "StoryBoardEditorSubsystem.generated.h"
 
 class FStoryNodeHelper;
+class FStoryAssetHelper;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, AStoryNode*)
 
@@ -72,13 +73,16 @@ public:
 
     void SetCurrentNode(AStoryNode* Node);
     void SetCurrentScenario(UStoryScenario* Scenario);
-
-    // listen to ed mode selected/activated scenario.
     void OnScenarioChange(UStoryScenario* inp);
 
-    void CreateStoryNodeHelper();
+    // helper objects
+    FORCEINLINE void CreateStoryAssetHelper();
+    FORCEINLINE void RemoveStoryAssetHelper();
+    FORCEINLINE void CreateStoryNodeHelper();
+    FORCEINLINE void RemoveStoryNodeHelper();
 
     TUniquePtr<FStoryNodeHelper> StoryNodeHelper;
+    TUniquePtr<FStoryAssetHelper> StoryAssetHelper;
     
 private:
     bool isEdMode { false };
@@ -94,6 +98,10 @@ private:
     friend class UStoryBoardEdMode;
 };
 
+/*
+    Helper class dealing with StoryNode in editor world.
+    Lifecycle: StoryBoardEdMode [enter, exit]
+*/
 class FStoryNodeHelper {
 public:
     FStoryNodeHelper(UWorld* World);
@@ -106,4 +114,21 @@ public:
     TSoftObjectPtr<AStoryNode> SelectedNode;
 
     TArray<TSoftObjectPtr<AStoryNode>> StoryNodes;
+};
+
+/*
+    Helper class dealing with StoryScenario asset.
+    Lifecycle: UStoryBoardEditorSubsystem [init, deinit]
+*/
+class FStoryAssetHelper {
+public:
+    FStoryAssetHelper() = default;
+    ~FStoryAssetHelper() = default;
+    /*
+        Create a scenario asset in TargetPath and assign it to Node.
+        Scenario template priority: current scenario > nearest PrevNode > map default scenario > empty scenario.
+    */
+    FString CreateScenario(UStoryScenario* TemplateScenario);
+private:
+    void RaiseSaveAssetWindow(FString& AssetPath);
 };

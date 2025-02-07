@@ -86,7 +86,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
         + SHorizontalBox::Slot()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0f, 0.0f, 0.0f, 15.0f))
+        .Padding(FMargin(0.0, 0.0, 0.0, 15.0))
         [
             SNew(SVerticalBox)
             + SVerticalBox::Slot()
@@ -103,7 +103,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     .AutoWidth()
                     .VAlign(VAlign_Bottom)
                     .HAlign(HAlign_Right)
-                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0, 8.0, 0.0, 0.0))
                     [
                         prevBtn.ToSharedRef()
                     ]
@@ -114,7 +114,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     [
                         SNew(SBorder)
                         .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                        .Padding(2.f)
+                        .Padding(FMargin(2.0, 0.0, 2.0, 0.0))
                         [
                             SNew(SHorizontalBox)
                             + SHorizontalBox::Slot()
@@ -130,24 +130,6 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                             .VAlign(VAlign_Center)
                             [
                                 currentView.ToSharedRef()
-#if 0
-                            SNew(SVerticalBox)
-                            + SVerticalBox::Slot()
-                            .AutoHeight()
-                            .VAlign(VAlign_Center)
-                            [
-                                widget
-                                // detailView
-                            ]
-                            + SVerticalBox::Slot()
-                            .AutoHeight()
-                            .VAlign(VAlign_Center)
-                            [
-                                SNew(STextBlock)
-                                .AccessibleText_Lambda([&edSubsys]() {
-                                    return edSubsys->GetCurrentScenario() ? edSubsys->GetCurrentScenario()->Name : FText::FromString(""); })
-                            ]
-#endif
                             ]
                             + SHorizontalBox::Slot()
                             .AutoWidth()
@@ -162,7 +144,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     .AutoWidth()
                     .VAlign(VAlign_Bottom)
                     .HAlign(HAlign_Left)
-                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0, 8.0, 0.0, 0.0))
                     [
                         nextBtn.ToSharedRef()
                     ]
@@ -181,22 +163,22 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
-                    .Padding(FMargin(0.0f, 0.0f, 8.0f, 0.0f))
+                    .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
                     [
                         SNew(SImage)
-                        .Image(FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode").GetIcon())
+                        .Image(FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode16").GetIcon())
                     ]
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
-                    .Padding(FMargin(0.0f, 0.0f, 8.0f, 0.0f))
+                    .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
                     [
                         SNew(STextBlock)
                         .Text(FText::FromString("Story Board"))
                     ]
                     + SHorizontalBox::Slot()
                     .AutoWidth()
-                    .Padding(FMargin(2.0f, 0.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(2.0, 0.0, 0.0, 0.0))
                     [
                         SNew(SButton)
                         .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
@@ -253,42 +235,91 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
         .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::NextNode);
     return widget;
 }
+
+auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
+    TArray<AStoryNode*> stack {node};
+
+    // bfs searching prevs for closest scenario
+    while (!stack.IsEmpty()) {
+        AStoryNode* curr = stack.Pop();
+        if (curr->Scenario.Get()) {
+            return curr->Scenario.Get();
+        }
+        for (auto prev : curr->PrevPoints) {
+            stack.Add(prev.Get());
+        }
+    }
+
+    // there is no scenario in all prev nodes
+    return nullptr;
+};
+
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
-    UStoryScenario* scenario = edSubsys->GetCurrentScenario();
+    UStoryScenario* nodeScenario = node ? node->Scenario.Get() : nullptr;
+
+    FText btnName = FText::FromString("Empty");
+    FString btnToolTip = FString("Add Scenario");
+    const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon("StoryBoardEditor.AddStoryScenario128").GetIcon();
+
+    UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
+    if (!templateScenario) {
+        templateScenario = BFSPrevForScenario(node);
+    }
+
+    if (nodeScenario) {
+        btnName = nodeScenario->Name;
+        btnToolTip = FString("Edit Scenario");
+        btnBrush = FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode128").GetIcon();
+    }
     
     auto widget = SNew(SVerticalBox)
         + SVerticalBox::Slot()
         .AutoHeight()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0f, 2.0f, 0.0f, 0.0f))
+        .Padding(FMargin(0.0, 2.0, 0.0, 0.0))
         [
             SNew(STextBlock)
-            .AccessibleText_Lambda([&node]() {
-                return node ? FText::FromString(node->GetActorLabel()) : FText::FromString("");
-            })
+            .Text(FText::FromString(node->GetActorLabel()))
         ]
         + SVerticalBox::Slot()
         .AutoHeight()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0f, 0.0f, 0.0f, 2.0f))
+        .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
         [
             SNew(SButton)
             .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
             .TextStyle(FAppStyle::Get(), "DialogButtonText")
-            .Text(FText::FromString("--"))
+            .Text_Lambda([btnName]() {
+                return btnName;
+            })
+            .ToolTipText_Lambda([btnToolTip]() {
+                return FText::FromString(btnToolTip);
+            })
             .HAlign(HAlign_Center)
             .VAlign(VAlign_Center)
-            .OnClicked_Lambda([edSubsys, node]() {
+            .OnClicked_Lambda([edSubsys, node, nodeScenario, templateScenario]() {
+                if (!nodeScenario) {
+                    FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
+                    node->Scenario = LoadObject<UStoryScenario>(nullptr, *path);
+                }
+
+                if (node->Scenario.IsValid()) {
+                    GEditor->EditObject(node->Scenario.Get());
+                }
+                
                 edSubsys->UISelectNode(node);
+
                 return FReply::Handled();
             })
             [
                 SNew(SImage)
-                .Image(FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass()).GetIcon())
+                .Image_Lambda([btnBrush]() {
+                    return btnBrush;
+                 })
             ]
         ];
 

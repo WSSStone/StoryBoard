@@ -8,6 +8,11 @@
 #include "EditorModes.h"
 #include "UnrealEdGlobals.h"
 #include "Editor/UnrealEdEngine.h"
+#include "EditorDirectories.h"
+#include "FileHelpers.h"
+#include "UObject/SavePackage.h"
+#include "ContentBrowserModule.h"
+#include "IContentBrowserSingleton.h"
 #include "DataLayer/DataLayerEditorSubsystem.h"
 #include "Subsystems/ActorEditorContextSubsystem.h"
 #include "LevelEditor.h"
@@ -31,14 +36,15 @@ void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection
     // register ui extensions here
     FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
     LevelEditorModule.OnLevelEditorCreated().AddUObject(this, &UStoryBoardEditorSubsystem::OnLevelEditorCreatedEvent);
+
+    CreateStoryAssetHelper();
 }
 
 void UStoryBoardEditorSubsystem::Deinitialize() {
     UE_LOG(LogStoryBoardEditor, Display, TEXT("UStoryBoardEditorSubsystem Deinitializing."));
 
-    if (StoryNodeHelper.IsValid()) {
-        StoryNodeHelper.Release();
-    }
+    ExitEdMode();
+    RemoveStoryAssetHelper();
 
     FWorldDelegates::OnCurrentLevelChanged.RemoveAll(this);
     FEditorDelegates::ChangeEditorMode.RemoveAll(this);
@@ -57,20 +63,32 @@ UStoryBoardSubsystem* UStoryBoardEditorSubsystem::GetStoryBoardSubsystem() {
     return StoryBoardPtr;
 }
 
+void UStoryBoardEditorSubsystem::CreateStoryAssetHelper() {
+    RemoveStoryAssetHelper();
+    StoryAssetHelper = MakeUnique<FStoryAssetHelper>();
+}
+
+void UStoryBoardEditorSubsystem::RemoveStoryAssetHelper() {
+    if (StoryAssetHelper.IsValid()) {
+        StoryAssetHelper.Release();
+    }
+}
+
 void UStoryBoardEditorSubsystem::CreateStoryNodeHelper() {
+    RemoveStoryNodeHelper();
+    StoryNodeHelper = MakeUnique<FStoryNodeHelper>(GEditor->GetEditorWorldContext().World());
+}
+
+void UStoryBoardEditorSubsystem::RemoveStoryNodeHelper() {
     if (StoryNodeHelper.IsValid()) {
         StoryNodeHelper.Release();
     }
-
-    StoryNodeHelper = MakeUnique<FStoryNodeHelper>(GEditor->GetEditorWorldContext().World());
 }
 
 void UStoryBoardEditorSubsystem::HandleOnMapOpened(const FString& Filename, bool bAsTemplate) {
     FString shortName = FPackageName::GetShortName(Filename);
     
     GetStoryBoardSubsystem();
-
-    CreateStoryNodeHelper();
 
     UE_LOG(LogStoryBoardEditor, Display, TEXT("HandleOnMapOpened, ShortName: %s, UStoryBoardSubsystem: %p"),
         *shortName, StoryBoardPtr);
@@ -95,7 +113,6 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
     CreateStoryNodeHelper();
 
     // assign a default StoryNode actor
-
     TArray<UObject*> selectedActors;
     GEditor->GetSelectedActors()->GetSelectedObjects(AStoryNode::StaticClass(), selectedActors);
     if (!selectedActors.IsEmpty()) {
@@ -108,9 +125,7 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
-    if (StoryNodeHelper.IsValid()) {
-        StoryNodeHelper.Release();
-    }
+    RemoveStoryNodeHelper();
 }
 
 void UStoryBoardEditorSubsystem::EnterEdMode() {
@@ -169,14 +184,16 @@ FReply UStoryBoardEditorSubsystem::UISelectNode(AStoryNode* Node) {
 }
 
 void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
-    if (StoryNodeHelper->SelectedNode.IsValid() && Node == StoryNodeHelper->SelectedNode.Get()) {
+    if (Node == nullptr) {
         return;
     }
 
     StoryNodeHelper->SelectedNode = Node;
+    if (Node) {
+        SetCurrentScenario(Node->Scenario.Get());
+    }
 
-    if (StoryNodeHelper->SelectedNode.IsValid() && EdNodeSelectedEvent.IsBound()) {
-        SetCurrentScenario(StoryNodeHelper->SelectedNode->Scenario.Get());
+    if (EdNodeSelectedEvent.IsBound()) {
         EdNodeSelectedEvent.Broadcast(Node);
     }
 }
@@ -333,51 +350,6 @@ void UStoryBoardEditorSubsystem::SetupDataLayerStatus(const TArray<FDataLayerSta
     }
 }
 
-FStoryNodeHelper::FStoryNodeHelper(UWorld* World) {
-    AllocateStoryNodes(World);
-
-    FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
-            if (!actors.IsEmpty()) AllocateStoryNodes(actors[0]->GetWorld());
-        });
-    FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
-    FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
-    FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
-}
-
-FStoryNodeHelper::~FStoryNodeHelper() {
-    FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
-    FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
-    FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
-    FEditorDelegates::OnNewActorsPlaced.RemoveAll(this);
-
-    StoryNodes.Empty();
-}
-
-void FStoryNodeHelper::OnStoryNodeAddedOrRemoved() {
-    UWorld* World = GEditor->GetEditorWorldContext().World();
-    AllocateStoryNodes(World);
-}
-
-void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
-    TArray<AActor*> actors;
-    UGameplayStatics::GetAllActorsOfClass(World, AStoryNode::StaticClass(), actors);
-    for (auto actor : actors) {
-        AStoryNode* node = Cast<AStoryNode>(actor);
-        if (!node) {
-            continue;
-        }
-
-        StoryNodes.Add(node);
-        
-        // set up edMode-only property PrevPoints
-        for (auto child : node->NextPoints) {
-            if (!child->PrevPoints.Contains(node)) {
-                child->PrevPoints.Add(node);
-            }
-        }
-    }
-}
-
 #pragma region Editor GUI
 void UStoryBoardEditorSubsystem::RegisterEntry() {
     FToolMenuOwnerScoped OwnerScoped(this);
@@ -481,5 +453,104 @@ TSharedRef<SDockTab> UStoryBoardEditorSubsystem::SummonScenarioEditor() {
     return ScenarioEditor;
 }
 #pragma endregion
+
+FStoryNodeHelper::FStoryNodeHelper(UWorld* World) {
+    AllocateStoryNodes(World);
+
+    FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
+        if (!actors.IsEmpty()) AllocateStoryNodes(actors[0]->GetWorld());
+        });
+    FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+}
+
+FStoryNodeHelper::~FStoryNodeHelper() {
+    FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
+    FEditorDelegates::OnNewActorsPlaced.RemoveAll(this);
+
+    StoryNodes.Empty();
+}
+
+void FStoryNodeHelper::OnStoryNodeAddedOrRemoved() {
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    AllocateStoryNodes(World);
+}
+
+void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
+    TArray<AActor*> actors;
+    UGameplayStatics::GetAllActorsOfClass(World, AStoryNode::StaticClass(), actors);
+    for (auto actor : actors) {
+        AStoryNode* node = Cast<AStoryNode>(actor);
+        if (!node) {
+            continue;
+        }
+
+        StoryNodes.Add(node);
+
+        // set up edMode-only property PrevPoints
+        for (auto child : node->NextPoints) {
+            if (!child->PrevPoints.Contains(node)) {
+                child->PrevPoints.Add(node);
+            }
+        }
+    }
+}
+
+FString FStoryAssetHelper::CreateScenario(UStoryScenario* TemplateScenario) {
+    FString assetPath, packagepath;
+    RaiseSaveAssetWindow(assetPath);
+    packagepath = FPackageName::ObjectPathToPackageName(assetPath);
+    const FName newAssetName(FPackageName::GetLongPackageAssetName(packagepath));
+
+    if (assetPath.IsEmpty() || packagepath.IsEmpty()) {
+        UE_LOG(LogStoryBoardEditor, Warning, TEXT("Asset/Package path not confirmed."));
+        return assetPath;
+    }
+
+    UPackage* const package = CreatePackage(*packagepath);
+    UStoryScenario* scenario;
+
+    if (TemplateScenario) {
+        scenario = DuplicateObject(TemplateScenario, package, newAssetName);
+#if 0
+        OutScenario->Name = FText::FromString(FString::Printf(TEXT("%s_copy"), *TemplateScenario->Name.ToString()));
+        OutScenario->Tooltip = TemplateScenario->Tooltip;
+        OutScenario->Map = TemplateScenario->Map;
+        FMemory::Memcpy(OutScenario->DataLayerStatuses.GetData(), TemplateScenario->DataLayerStatuses.GetData(), TemplateScenario->DataLayerStatuses.Num());
+        FMemory::Memcpy(OutScenario->ActorVisibilities.GetData(), TemplateScenario->ActorVisibilities.GetData(), TemplateScenario->ActorVisibilities.Num());
+        FMemory::Memcpy(OutScenario->ConsoleCommands.GetData(), TemplateScenario->ConsoleCommands.GetData(), TemplateScenario->ConsoleCommands.Num());
+        OutScenario->WeatherStatus = TemplateScenario->WeatherStatus;
+#endif
+    } else {
+        scenario = NewObject<UStoryScenario>(package, UStoryScenario::StaticClass(), *newAssetName.ToString(), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+
+        FSavePackageArgs saveArgs;
+        saveArgs.TopLevelFlags = RF_Standalone;
+        saveArgs.SaveFlags = SAVE_NoError;
+        bool result = UPackage::SavePackage(package, scenario, *assetPath, saveArgs);
+        UE_LOG(LogStoryBoardEditor, Display, TEXT("%s"), result ? *FString("save succeeded") : *FString("save failed"));
+    }
+
+    scenario->MarkPackageDirty();
+    FAssetRegistryModule::AssetCreated(scenario);
+
+    return assetPath;
+}
+
+void FStoryAssetHelper::RaiseSaveAssetWindow(FString& AssetPath) {
+    FContentBrowserModule& contentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+
+    FSaveAssetDialogConfig dialogConfig;
+    dialogConfig.DefaultPath = FEditorDirectories::Get().GetLastDirectory(ELastDirectory::NEW_ASSET);
+    dialogConfig.DefaultAssetName = TEXT("NewStoryScenario");
+    dialogConfig.AssetClassNames.Add(UStoryScenario::StaticClass()->GetClassPathName());
+    dialogConfig.DialogTitleOverride = LOCTEXT("CreateStoryScenario", "Create New Story Scenario");
+    dialogConfig.ExistingAssetPolicy = ESaveAssetDialogExistingAssetPolicy::Disallow;
+
+    AssetPath = contentBrowserModule.Get().CreateModalSaveAssetDialog(dialogConfig);
+}
 
 #undef LOCTEXT_NAMESPACE

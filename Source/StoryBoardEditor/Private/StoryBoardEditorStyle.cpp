@@ -12,7 +12,7 @@
 TSharedPtr<FSlateStyleSet> FStoryBoardEditorStyle::StyleSet = nullptr;
 const FVector2D Icon16x16 {16.f, 16.f};
 const FVector2D Icon20x20 {20.f, 20.f};
-const FVector2D Icon50x50 {50.0f, 50.0f};
+const FVector2D Icon128x128 {128.0f, 128.0f};
 
 FString FStoryBoardEditorStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension) {
     static FString contentDir = IPluginManager::Get().FindPlugin("StoryBoard")->GetContentDir();
@@ -50,7 +50,13 @@ TSharedRef<FSlateStyleSet> FStoryBoardEditorStyle::Create() {
     TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("StoryBoardEditorStyle"));
 
     {
-        Style->Set("StoryBoardEditor.StoryBoardEdMode", new RESOURCE_BRUSH("Icon16", Icon16x16));
+        Style->Set("StoryBoardEditor.StoryBoardEdMode16", new RESOURCE_BRUSH("Icon16", Icon16x16));
+        Style->Set("StoryBoardEditor.StoryBoardEdMode20", new RESOURCE_BRUSH("Icon20", Icon20x20));
+        Style->Set("StoryBoardEditor.StoryBoardEdMode128", new RESOURCE_BRUSH("Icon128", Icon128x128));
+
+        Style->Set("StoryBoardEditor.AddStoryScenario16", new RESOURCE_BRUSH("AddIcon16", Icon16x16));
+        Style->Set("StoryBoardEditor.AddStoryScenario20", new RESOURCE_BRUSH("AddIcon20", Icon20x20));
+        Style->Set("StoryBoardEditor.AddStoryScenario128", new RESOURCE_BRUSH("AddIcon128", Icon128x128));
     }
 
     return Style;
