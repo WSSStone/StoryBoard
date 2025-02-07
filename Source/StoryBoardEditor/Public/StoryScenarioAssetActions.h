@@ -11,4 +11,5 @@ public:
     virtual FColor GetTypeColor() const override { return FColor::Emerald; }
     virtual UClass* GetSupportedClass() const override;
     virtual uint32 GetCategories() override { return EAssetTypeCategories::Misc; }
+    virtual class UThumbnailInfo* GetThumbnailInfo(UObject* Asset) const override;
 };

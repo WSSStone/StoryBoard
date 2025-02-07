@@ -28,8 +28,6 @@ FNodeSelectedEvent UStoryBoardEditorSubsystem::EdNodeSelectedEvent;
 void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
 
-    UE_LOG(LogStoryBoardEditor, Display, TEXT("UStoryBoardEditorSubsystem Initializing."));
-
     FEditorDelegates::OnMapOpened.AddUObject(this, &UStoryBoardEditorSubsystem::HandleOnMapOpened);
     FWorldDelegates::OnCurrentLevelChanged.AddUObject(this, &UStoryBoardEditorSubsystem::OnCurrentLevelChanged);
     
@@ -41,8 +39,6 @@ void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection
 }
 
 void UStoryBoardEditorSubsystem::Deinitialize() {
-    UE_LOG(LogStoryBoardEditor, Display, TEXT("UStoryBoardEditorSubsystem Deinitializing."));
-
     ExitEdMode();
     RemoveStoryAssetHelper();
 
@@ -89,14 +85,10 @@ void UStoryBoardEditorSubsystem::HandleOnMapOpened(const FString& Filename, bool
     FString shortName = FPackageName::GetShortName(Filename);
     
     GetStoryBoardSubsystem();
-
-    UE_LOG(LogStoryBoardEditor, Display, TEXT("HandleOnMapOpened, ShortName: %s, UStoryBoardSubsystem: %p"),
-        *shortName, StoryBoardPtr);
 }
 
 void UStoryBoardEditorSubsystem::OnCurrentLevelChanged(ULevel* InNewLevel, ULevel* InOldLevel, UWorld* InWorld) {
     GetStoryBoardSubsystem();
-    UE_LOG(LogStoryBoardEditor, Display, TEXT("OnCurrentLevelChanged: UStoryBoardSubsystem: %p"), StoryBoardPtr);
 }
 
 void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
@@ -151,8 +143,6 @@ auto FocusActor = [](AActor* actor) {
 };
 
 FReply UStoryBoardEditorSubsystem::PreviousNode() {
-    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Previous Scenario"));
-
     // Point Current to Previous
     if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->PrevPoints.IsEmpty()) {
         SetCurrentNode(StoryNodeHelper->SelectedNode->PrevPoints[0].Get());
@@ -163,8 +153,6 @@ FReply UStoryBoardEditorSubsystem::PreviousNode() {
 }
 
 FReply UStoryBoardEditorSubsystem::NextNode() {
-    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Next Scenario"));
-
     // Point Current to Next
     if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->NextPoints.IsEmpty()) {
         SetCurrentNode(StoryNodeHelper->SelectedNode->NextPoints[0].Get());
@@ -175,8 +163,6 @@ FReply UStoryBoardEditorSubsystem::NextNode() {
 }
 
 FReply UStoryBoardEditorSubsystem::UISelectNode(AStoryNode* Node) {
-    UE_LOG(LogStoryBoardEditor, Warning, TEXT("Select Node"));
-
     SetCurrentNode(Node);
     FocusActor(Node);
 
@@ -356,7 +342,7 @@ void UStoryBoardEditorSubsystem::RegisterEntry() {
 
     UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
 
-    FToolMenuSection& Section = Menu->AddSection("ACT", LOCTEXT("ACT", "World Action"));
+    FToolMenuSection& Section = Menu->AddSection("ACT", LOCTEXT("ACT", "Action"));
 
     Section.AddEntry(FToolMenuEntry::InitMenuEntry(
         "Scenarios",
@@ -365,7 +351,7 @@ void UStoryBoardEditorSubsystem::RegisterEntry() {
         FSlateIcon(FAppStyle::GetAppStyleSetName(), "DeveloperTools.MenuIcon"),
         FUIAction(FExecuteAction::CreateLambda([]() {
             GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>()->SummonScenarioEditor();
-            }))
+        }))
     ));
 }
 
@@ -502,11 +488,11 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
 FString FStoryAssetHelper::CreateScenario(UStoryScenario* TemplateScenario) {
     FString assetPath, packagepath;
     RaiseSaveAssetWindow(assetPath);
+
     packagepath = FPackageName::ObjectPathToPackageName(assetPath);
-    const FName newAssetName(FPackageName::GetLongPackageAssetName(packagepath));
+    const FName assetName(FPackageName::GetLongPackageAssetName(packagepath));
 
     if (assetPath.IsEmpty() || packagepath.IsEmpty()) {
-        UE_LOG(LogStoryBoardEditor, Warning, TEXT("Asset/Package path not confirmed."));
         return assetPath;
     }
 
@@ -514,18 +500,9 @@ FString FStoryAssetHelper::CreateScenario(UStoryScenario* TemplateScenario) {
     UStoryScenario* scenario;
 
     if (TemplateScenario) {
-        scenario = DuplicateObject(TemplateScenario, package, newAssetName);
-#if 0
-        OutScenario->Name = FText::FromString(FString::Printf(TEXT("%s_copy"), *TemplateScenario->Name.ToString()));
-        OutScenario->Tooltip = TemplateScenario->Tooltip;
-        OutScenario->Map = TemplateScenario->Map;
-        FMemory::Memcpy(OutScenario->DataLayerStatuses.GetData(), TemplateScenario->DataLayerStatuses.GetData(), TemplateScenario->DataLayerStatuses.Num());
-        FMemory::Memcpy(OutScenario->ActorVisibilities.GetData(), TemplateScenario->ActorVisibilities.GetData(), TemplateScenario->ActorVisibilities.Num());
-        FMemory::Memcpy(OutScenario->ConsoleCommands.GetData(), TemplateScenario->ConsoleCommands.GetData(), TemplateScenario->ConsoleCommands.Num());
-        OutScenario->WeatherStatus = TemplateScenario->WeatherStatus;
-#endif
+        scenario = DuplicateObject(TemplateScenario, package, assetName);
     } else {
-        scenario = NewObject<UStoryScenario>(package, UStoryScenario::StaticClass(), *newAssetName.ToString(), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+        scenario = NewObject<UStoryScenario>(package, UStoryScenario::StaticClass(), *assetName.ToString(), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 
         FSavePackageArgs saveArgs;
         saveArgs.TopLevelFlags = RF_Standalone;
