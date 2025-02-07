@@ -15,7 +15,7 @@ public:
     virtual FText GetBaseToolkitName() const override;
     virtual class FEdMode* GetEditorMode() const override;
 
-    void OnNodeSelected(AStoryNode* node);
+    void OnNodeSelectedRedraw(AStoryNode* node);
 
 protected:
     bool bUsesToolkitBuilder { false };

@@ -25,7 +25,7 @@ void UStoryBoardEdMode::Enter() {
     UEdMode::Enter();
 
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    edSubsys->EdNodeSelectedEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelected);
+    edSubsys->EdNodeSelectedEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
     edSubsys->isEdMode = true;
 }
 

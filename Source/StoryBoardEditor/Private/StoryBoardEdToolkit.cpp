@@ -21,24 +21,20 @@ FStoryBoardEdToolkit::~FStoryBoardEdToolkit() {
     if (IsHosted() && ViewportOverlayWidget.IsValid()) {
         GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
     }
-
-    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    edSubsys->EdNodeSelectedEvent.RemoveAll(this);
 }
 
 void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost, TWeakObjectPtr<UEdMode> InOwningMode) {
     FModeToolkit::Init(InitToolkitHost, InOwningMode);
 
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    edSubsys->EdNodeSelectedEvent.AddRaw(this, &FStoryBoardEdToolkit::OnNodeSelected);
-    
     edSubsys->OnEnterEdMode();
+
     ArrangeWidget();
 
     GetToolkitHost()->AddViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
 }
 
-void FStoryBoardEdToolkit::OnNodeSelected(AStoryNode* node) {
+void FStoryBoardEdToolkit::OnNodeSelectedRedraw(AStoryNode* node) {
     if (IsHosted() && ViewportOverlayWidget.IsValid()) {
         GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
     }
@@ -347,18 +343,34 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     FMenuBuilder MenuBuilder(true, nullptr);
     for (auto item : List) {
-        FSoftObjectPath Path = item->Scenario->GetPathName();
+        FMenuEntryParams entryParams;
+        entryParams.LabelOverride = FText::FromString(item->GetActorLabel());
+        entryParams.ToolTipOverride = FText::FromString("Select Node");
+        entryParams.IconOverride = FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass());
+        entryParams.DirectActions = FUIAction(
+            FExecuteAction::CreateLambda([item, edSubsys]() {
+                edSubsys->UISelectNode(item);
+            })
+        );
+        entryParams.ExtensionHook = NAME_None;
+        entryParams.UserInterfaceActionType = EUserInterfaceActionType::Button;
+
         MenuBuilder.AddMenuEntry(
+#if 0
             FText::FromString(item->GetActorLabel()),
             FText::FromString("Selet Node"),
             FSlateIconFinder::FindIconForClass(UStoryScenario::StaticClass()),
             FUIAction(
                 FExecuteAction::CreateLambda([item, edSubsys]() {
                     edSubsys->UISelectNode(item);
-                })
+                    })
             ),
             NAME_None,
-            EUserInterfaceActionType::Button);
+            EUserInterfaceActionType::Button
+#else
+            entryParams
+#endif
+        );
     }
     return MenuBuilder.MakeWidget();
 }
