@@ -1,7 +1,7 @@
 # pragma once
 
-#include "StoryBoardSubsystem.h"
 #include "StoryNode.h"
+#include "StoryBoardSubsystem.h"
 
 #include "CoreMinimal.h"
 #include "LevelEditor.h"
@@ -9,7 +9,7 @@
 
 #include "StoryBoardEditorSubsystem.generated.h"
 
-class FStoryNodeHelper;
+class FStoryNodeEditorHelper;
 class FStoryAssetHelper;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, AStoryNode*)
@@ -71,9 +71,10 @@ public:
     FReply UISelectNode(AStoryNode* Node);
 
     void SetCurrentNode(AStoryNode* Node);
-    void OnNodePropChange(AStoryNode* Node);
-
     void SetCurrentScenario(UStoryScenario* Scenario);
+
+    void HandleNodeScenarioChange(AStoryNode* Node);
+    void HandleNodeNextPointsChange(AStoryNode* Node);
     void OnScenarioPropChange(UStoryScenario* inp);
 
     // helper objects
@@ -82,7 +83,7 @@ public:
     FORCEINLINE void CreateStoryNodeHelper();
     FORCEINLINE void RemoveStoryNodeHelper();
 
-    TUniquePtr<FStoryNodeHelper> StoryNodeHelper;
+    TUniquePtr<FStoryNodeEditorHelper> StoryNodeHelper;
     TUniquePtr<FStoryAssetHelper> StoryAssetHelper;
     
 private:
@@ -92,32 +93,13 @@ private:
 
     UStoryBoardSubsystem* StoryBoardPtr;
 
+    void HandleEditorBeginPIE(bool);
+
     void HandleOnMapOpened(const FString& Filename, bool bAsTemplate);
 
     void OnCurrentLevelChanged(ULevel* InNewLevel, ULevel* InOldLevel, UWorld* InWorld);
 
     friend class UStoryBoardEdMode;
-};
-
-/*
-    Helper class dealing with StoryNode in editor world.
-    Lifecycle: StoryBoardEdMode [enter, exit]
-*/
-class FStoryNodeHelper {
-public:
-    FStoryNodeHelper(UWorld* World);
-    ~FStoryNodeHelper();
-
-    void OnStoryNodeAddedOrRemoved();
-
-    // Check all story nodes in world, and make delegate bindings.
-    void AllocateStoryNodes(UWorld* World);
-
-    void ReallocateStoryNodes(UWorld* World);
-
-    TSoftObjectPtr<AStoryNode> SelectedNode;
-
-    TArray<TSoftObjectPtr<AStoryNode>> StoryNodes;
 };
 
 /*
@@ -135,4 +117,27 @@ public:
     FString CreateScenario(UStoryScenario* TemplateScenario);
 private:
     void RaiseSaveAssetWindow(FString& AssetPath);
+};
+
+class FStoryNodeEditorHelper : public FStoryNodeHelper {
+public:
+    FStoryNodeEditorHelper(UWorld* World);
+    virtual ~FStoryNodeEditorHelper();
+
+    // Check all story nodes in world, and make delegate bindings.
+    virtual void AllocateStoryNodes(UWorld* World) override;
+
+    void ReallocateStoryNodes(UWorld* World);
+
+    void OnStoryNodeAddedOrRemoved();
+
+    virtual UStoryScenario* BFSNearestPrevScenario() override;
+
+    void GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret);
+
+    void GetNextStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret);
+
+    void GetImmeidateNodes(TArray<TObjectPtr<AStoryNode>>& Ret, AStoryNode* Node, bool bParent = true);
+
+    TSoftObjectPtr<AStoryNode> SelectedNode;
 };

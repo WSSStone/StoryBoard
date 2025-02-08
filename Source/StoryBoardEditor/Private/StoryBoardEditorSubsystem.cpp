@@ -28,6 +28,7 @@ FNodeSelectedEvent UStoryBoardEditorSubsystem::EdNodeSelectedEvent;
 void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
 
+    FEditorDelegates::BeginPIE.AddUObject(this, &UStoryBoardEditorSubsystem::HandleEditorBeginPIE);
     FEditorDelegates::OnMapOpened.AddUObject(this, &UStoryBoardEditorSubsystem::HandleOnMapOpened);
     FWorldDelegates::OnCurrentLevelChanged.AddUObject(this, &UStoryBoardEditorSubsystem::OnCurrentLevelChanged);
     
@@ -46,6 +47,7 @@ void UStoryBoardEditorSubsystem::Deinitialize() {
     FWorldDelegates::OnCurrentLevelChanged.RemoveAll(this);
     FEditorDelegates::ChangeEditorMode.RemoveAll(this);
     FEditorDelegates::OnMapOpened.RemoveAll(this);
+    FEditorDelegates::BeginPIE.RemoveAll(this);
 
     Super::Deinitialize();
 }
@@ -73,13 +75,20 @@ void UStoryBoardEditorSubsystem::RemoveStoryAssetHelper() {
 
 void UStoryBoardEditorSubsystem::CreateStoryNodeHelper() {
     RemoveStoryNodeHelper();
-    StoryNodeHelper = MakeUnique<FStoryNodeHelper>(GEditor->GetEditorWorldContext().World());
+    StoryNodeHelper = MakeUnique<FStoryNodeEditorHelper>(GEditor->GetEditorWorldContext().World());
+    StoryNodeHelper->BuildGraph();
+
+    return;
 }
 
 void UStoryBoardEditorSubsystem::RemoveStoryNodeHelper() {
     if (StoryNodeHelper.IsValid()) {
         StoryNodeHelper.Release();
     }
+}
+
+void UStoryBoardEditorSubsystem::HandleEditorBeginPIE(bool) {
+    ExitEdMode();
 }
 
 void UStoryBoardEditorSubsystem::HandleOnMapOpened(const FString& Filename, bool bAsTemplate) {
@@ -102,9 +111,14 @@ void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) 
     }
 }
 
-void UStoryBoardEditorSubsystem::OnNodePropChange(AStoryNode* Node) {
+void UStoryBoardEditorSubsystem::HandleNodeScenarioChange(AStoryNode* Node) {
     EdNodeSelectedEvent.Broadcast(Node);
     SetupScenario(Node->Scenario.Get());
+}
+
+void UStoryBoardEditorSubsystem::HandleNodeNextPointsChange(AStoryNode* Node) {
+    StoryNodeHelper->ReallocateStoryNodes(GEditor->GetEditorWorldContext().World());
+    EdNodeSelectedEvent.Broadcast(Node);
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {
@@ -152,8 +166,10 @@ auto FocusActor = [](AActor* actor) {
 
 FReply UStoryBoardEditorSubsystem::PreviousNode() {
     // Point Current to Previous
-    if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->PrevPoints.IsEmpty()) {
-        SetCurrentNode(StoryNodeHelper->SelectedNode->PrevPoints[0].Get());
+    TArray<TObjectPtr<AStoryNode>> arr;
+    StoryNodeHelper->GetPrevStoryNodes(arr);
+    if (StoryNodeHelper->SelectedNode.IsValid() && !arr.IsEmpty()) {
+        SetCurrentNode(arr[0].Get());
         FocusActor(StoryNodeHelper->SelectedNode.Get());
     }
 
@@ -162,8 +178,10 @@ FReply UStoryBoardEditorSubsystem::PreviousNode() {
 
 FReply UStoryBoardEditorSubsystem::NextNode() {
     // Point Current to Next
-    if (StoryNodeHelper->SelectedNode.IsValid() && !StoryNodeHelper->SelectedNode->NextPoints.IsEmpty()) {
-        SetCurrentNode(StoryNodeHelper->SelectedNode->NextPoints[0].Get());
+    TArray<TObjectPtr<AStoryNode>> arr; 
+    StoryNodeHelper->GetNextStoryNodes(arr);
+    if (StoryNodeHelper->SelectedNode.IsValid() && !arr.IsEmpty()) {
+        SetCurrentNode(arr[0].Get());
         FocusActor(StoryNodeHelper->SelectedNode.Get());
     }
 
@@ -448,32 +466,29 @@ TSharedRef<SDockTab> UStoryBoardEditorSubsystem::SummonScenarioEditor() {
 }
 #pragma endregion
 
-FStoryNodeHelper::FStoryNodeHelper(UWorld* World) {
+FStoryNodeEditorHelper::FStoryNodeEditorHelper(UWorld* World) {
     AllocateStoryNodes(World);
+    BuildGraph();
 
     FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
         if (!actors.IsEmpty()) ReallocateStoryNodes(actors[0]->GetWorld());
         });
-    FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
-    FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
-    FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
+    FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
 }
 
-FStoryNodeHelper::~FStoryNodeHelper() {
+FStoryNodeEditorHelper::~FStoryNodeEditorHelper() {
     FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
     FEditorDelegates::OnNewActorsPlaced.RemoveAll(this);
 
+    StoryNodeWrappers.Empty();
     StoryNodes.Empty();
 }
 
-void FStoryNodeHelper::OnStoryNodeAddedOrRemoved() {
-    UWorld* World = GEditor->GetEditorWorldContext().World();
-    ReallocateStoryNodes(World);
-}
-
-void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
+void FStoryNodeEditorHelper::AllocateStoryNodes(UWorld* World) {
     TArray<AActor*> actors;
     UGameplayStatics::GetAllActorsOfClass(World, AStoryNode::StaticClass(), actors);
     for (auto actor : actors) {
@@ -483,28 +498,57 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
         }
 
         StoryNodes.Add(node);
-        // bind delegate
-        auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-        node->ScenarioPropChangeEvent.BindUObject(edSubsys, &UStoryBoardEditorSubsystem::OnNodePropChange);
 
-        // set up edMode-only property PrevPoints
-        for (auto child : node->NextPoints) {
-            if (!child->PrevPoints.Contains(node)) {
-                child->PrevPoints.Add(node);
-            }
-        }
+        auto subSys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+        node->OnScenarioPropChanged.BindUObject(subSys, &UStoryBoardEditorSubsystem::HandleNodeScenarioChange);
+        node->OnNextPointsPropChanged.BindUObject(subSys, &UStoryBoardEditorSubsystem::HandleNodeNextPointsChange);
     }
 }
 
-void FStoryNodeHelper::ReallocateStoryNodes(UWorld* World) {
+void FStoryNodeEditorHelper::ReallocateStoryNodes(UWorld* World) {
     for (auto node : StoryNodes) {
-        // unbind
-        if (node->ScenarioPropChangeEvent.IsBound()) {
-            node->ScenarioPropChangeEvent.Unbind();
+        if (node.IsValid()) {
+            if (node->OnScenarioPropChanged.IsBound())
+                node->OnScenarioPropChanged.Unbind();
+
+            if (node->OnNextPointsPropChanged.IsBound())
+                node->OnNextPointsPropChanged.Unbind();
+        }
+        
+        StoryNodes.Remove(node);
+    }
+    AllocateStoryNodes(World);
+    BuildGraph();
+}
+
+void FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved() {
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    ReallocateStoryNodes(World);
+}
+
+UStoryScenario* FStoryNodeEditorHelper::BFSNearestPrevScenario() {
+    if (SelectedNode.IsValid()) {
+        return FStoryNodeHelper::BFSNearestPrevScenario(SelectedNode.Get());
+    }
+    return nullptr;
+}
+
+void FStoryNodeEditorHelper::GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret) {
+    GetImmeidateNodes(Ret, SelectedNode.Get());
+}
+
+void FStoryNodeEditorHelper::GetNextStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret) {
+    GetImmeidateNodes(Ret, SelectedNode.Get(), false);
+}
+
+void FStoryNodeEditorHelper::GetImmeidateNodes(TArray<TObjectPtr<AStoryNode>>& Ret, AStoryNode* Node, bool bParent) {    
+    FStoryNodeWrapper* wrapper = StoryNodeWrappers.Find(Node);
+    if (wrapper != nullptr) {
+        const TArray<FStoryNodeWrapper*>& arr = bParent ? wrapper->PrevNodes : wrapper->NextNodes;
+        for (auto imme : arr) {
+            Ret.Add(imme->Node.Get());
         }
     }
-    
-    AllocateStoryNodes(World);
 }
 
 FString FStoryAssetHelper::CreateScenario(UStoryScenario* TemplateScenario) {

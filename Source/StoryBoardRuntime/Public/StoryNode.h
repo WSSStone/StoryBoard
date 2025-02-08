@@ -15,13 +15,15 @@ public:
     TArray<TObjectPtr<AStoryNode>> NextPoints;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    TSoftObjectPtr<UStoryScenario> Scenario;
+    TObjectPtr<UStoryScenario> Scenario;
+
+    UPROPERTY(EditAnywhere)
+    bool bDebugStartPoint = false;
 
 #if WITH_EDITOR
-    TArray<TObjectPtr<AStoryNode>> PrevPoints;
-    
     DECLARE_DELEGATE_OneParam(FScenraioPropChange, AStoryNode*)
-    FScenraioPropChange ScenarioPropChangeEvent;
+    FScenraioPropChange OnScenarioPropChanged;
+    FScenraioPropChange OnNextPointsPropChanged;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // !WITH_EIDTOR

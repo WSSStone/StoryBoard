@@ -208,32 +208,6 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
     return widget;
 }
 
-auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
-    TArray<AStoryNode*> queue {node};
-    TArray<AStoryNode*> history;
-
-    // bfs searching prevs for closest scenario
-    while (!queue.IsEmpty()) {
-        AStoryNode* curr = queue[0];
-        queue.RemoveAt(0);
-        history.Add(curr);
-
-        if (curr->Scenario.Get()) {
-            return curr->Scenario.Get();
-        }
-        for (auto prev : curr->PrevPoints) {
-            AStoryNode* prevNode = prev.Get();
-            if (history.Contains(curr)) {
-                continue;
-            }
-            queue.Add(prevNode);
-        }
-    }
-
-    // there is no scenario in all prev nodes
-    return nullptr;
-};
-
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
@@ -256,10 +230,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
         iconWidget = CreateAssetThumbnailWidget(nodeScenario, int32(ImageSize::S128)).ToSharedRef();
     }
 
-    UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
-    if (!templateScenario) {
-        templateScenario = BFSPrevForScenario(node);
-    }
+    UStoryScenario* templateScenario = edSubsys->StoryNodeHelper->BFSNearestPrevScenario();
 
     auto widget = SNew(SBorder)
         .BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.0f))
@@ -295,7 +266,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
                         FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
                         node->Scenario = LoadObject<UStoryScenario>(nullptr, *path);
                     }
-                    if (node->Scenario.IsValid()) {
+                    if (node->Scenario) {
                         GEditor->EditObject(node->Scenario.Get());
                     }
                     edSubsys->UISelectNode(node);
@@ -323,10 +294,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
         iconWidget = CreateAssetThumbnailWidget(nodeScenario, int(Size)).ToSharedRef();
     }
 
-    UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
-    if (!templateScenario) {
-        templateScenario = BFSPrevForScenario(Node);
-    }
+    UStoryScenario* templateScenario = edSubsys->StoryNodeHelper->BFSNearestPrevScenario();
 
     auto widget = SNew(SVerticalBox)
         + SVerticalBox::Slot()
@@ -372,7 +340,9 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateAssetThumbnailWidget(UObject* As
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     if (AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get()) {
-        return CreateNodeListView(node->PrevPoints);
+        TArray<TObjectPtr<AStoryNode>> arr;
+        edSubsys->StoryNodeHelper->GetPrevStoryNodes(arr);
+        return CreateNodeListView(arr);
     }
 
     return SNew(SBorder);
@@ -381,7 +351,9 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextNodesView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     if (AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get()) {
-        return CreateNodeListView(node->NextPoints);
+        TArray<TObjectPtr<AStoryNode>> arr;
+        edSubsys->StoryNodeHelper->GetNextStoryNodes(arr);
+        return CreateNodeListView(arr);
     }
 
     return SNew(SBorder);
