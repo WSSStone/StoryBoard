@@ -24,6 +24,8 @@ public:
 
     virtual void Deinitialize() override;
 
+    virtual UWorld* GetWorld() const override;
+
     FORCEINLINE UStoryBoardSubsystem* GetStoryBoardSubsystem();
 
     UFUNCTION(BlueprintCallable)

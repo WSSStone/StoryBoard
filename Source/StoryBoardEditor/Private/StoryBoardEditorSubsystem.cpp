@@ -52,6 +52,10 @@ void UStoryBoardEditorSubsystem::Deinitialize() {
     Super::Deinitialize();
 }
 
+UWorld* UStoryBoardEditorSubsystem::GetWorld() const {
+    return GEditor->GetEditorWorldContext().World();
+}
+
 UStoryBoardSubsystem* UStoryBoardEditorSubsystem::GetStoryBoardSubsystem() {
     if (StoryBoardPtr == nullptr) {
         UWorld* world = GEditor->GetEditorWorldContext().World();
