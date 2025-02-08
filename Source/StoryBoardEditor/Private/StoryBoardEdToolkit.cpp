@@ -252,36 +252,24 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
         return SNew(SBorder);
     }
 
-    UStoryScenario* nodeScenario = node->Scenario.Get();
     FText btnName = FText::FromString("Empty");
     FString btnToolTip = FString("Add Scenario");
+
     FString iconName = FString("StoryBoardEditor.AddStoryScenario128");
     const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon(FName(iconName)).GetIcon();
+    TSharedRef<SWidget> iconWidget = SNew(SImage)
+        .Image_Lambda([btnBrush]() { return btnBrush; });
+
+    UStoryScenario* nodeScenario = node->Scenario.Get();
+    if (nodeScenario != nullptr) {
+        btnName = nodeScenario->Name;
+        btnToolTip = FString("Edit Scenario");
+        iconWidget = CreateAssetThumbnailWidget(nodeScenario, int32(ImageSize::S128)).ToSharedRef();
+    }
 
     UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
     if (!templateScenario) {
         templateScenario = BFSPrevForScenario(node);
-    }
-
-    TSharedRef<SWidget> iconWidget = SNew(SImage)
-    .Image_Lambda([btnBrush]() { return btnBrush; });
-
-    if (nodeScenario != nullptr) {
-        btnName = nodeScenario->Name;
-        btnToolTip = FString("Edit Scenario");
-
-        const int32 ThumbnailSize = 128;
-        TSharedPtr<FAssetThumbnail> thumbnail = MakeShareable(new FAssetThumbnail(nodeScenario, ThumbnailSize, ThumbnailSize, UThumbnailManager::Get().GetSharedThumbnailPool()));
-
-        if (thumbnail.IsValid()) {
-            FAssetThumbnailConfig ThumbnailConfig;
-            ThumbnailConfig.bAllowFadeIn = false;
-            ThumbnailConfig.bAllowHintText = false;
-            ThumbnailConfig.bAllowRealTimeOnHovered = false;
-            ThumbnailConfig.bForceGenericThumbnail = false;
-
-            iconWidget = thumbnail->MakeThumbnailWidget(ThumbnailConfig);
-        }
     }
 
     auto widget = SNew(SVerticalBox)
@@ -301,7 +289,6 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
         .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
         [
             SNew(SButton)
-            // .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
             .TextStyle(FAppStyle::Get(), "DialogButtonText")
             .Text_Lambda([btnName]() { return btnName; })
             .ToolTipText_Lambda([btnToolTip]() { return FText::FromString(btnToolTip); })
@@ -329,31 +316,19 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, ImageSize Size) {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
 
-    UStoryScenario* nodeScenario = Node->Scenario.Get();
-
     FString iconName = FString::Printf(TEXT("StoryBoardEditor.AddStoryScenario%d"), uint32(Size));
     const FSlateBrush* btnBrush = FSlateIconFinder::FindIcon(FName(iconName)).GetIcon();
+    TSharedRef<SWidget> iconWidget = SNew(SImage)
+        .Image_Lambda([btnBrush]() { return btnBrush; });
+
+    UStoryScenario* nodeScenario = Node->Scenario.Get();
+    if (nodeScenario != nullptr) {
+        iconWidget = CreateAssetThumbnailWidget(nodeScenario, int(Size)).ToSharedRef();
+    }
+
     UStoryScenario* templateScenario = edSubsys->GetCurrentScenario();
     if (!templateScenario) {
         templateScenario = BFSPrevForScenario(Node);
-    }
-
-    TSharedRef<SWidget> iconWidget = SNew(SImage)
-    .Image_Lambda([btnBrush]() { return btnBrush; });
-
-    if (nodeScenario != nullptr) {
-        const int32 ThumbnailSize = 64;
-        TSharedPtr<FAssetThumbnail> thumbnail = MakeShareable(new FAssetThumbnail(nodeScenario, ThumbnailSize, ThumbnailSize, UThumbnailManager::Get().GetSharedThumbnailPool()));
-
-        if (thumbnail.IsValid()) {
-            FAssetThumbnailConfig ThumbnailConfig;
-            ThumbnailConfig.bAllowFadeIn = false;
-            ThumbnailConfig.bAllowHintText = false;
-            ThumbnailConfig.bAllowRealTimeOnHovered = false;
-            ThumbnailConfig.bForceGenericThumbnail = false;
-
-            iconWidget = thumbnail->MakeThumbnailWidget(ThumbnailConfig);
-        }
     }
 
     auto widget = SNew(SVerticalBox)
@@ -376,6 +351,25 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
         ];
 
     return widget;
+}
+
+TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateAssetThumbnailWidget(UObject* Asset, int32 Size) {
+    if (!Asset) {
+        return SNew(SBorder);
+    }
+
+    TSharedPtr<FAssetThumbnail> thumbnail = MakeShareable(new FAssetThumbnail(Asset, Size, Size, UThumbnailManager::Get().GetSharedThumbnailPool()));
+    if (!thumbnail.IsValid()) {
+        return SNew(SBorder);
+    }
+
+    FAssetThumbnailConfig ThumbnailConfig;
+    ThumbnailConfig.bAllowFadeIn = false;
+    ThumbnailConfig.bAllowHintText = false;
+    ThumbnailConfig.bAllowRealTimeOnHovered = false;
+    ThumbnailConfig.bForceGenericThumbnail = false;
+
+    return thumbnail->MakeThumbnailWidget(ThumbnailConfig);
 }
 
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {

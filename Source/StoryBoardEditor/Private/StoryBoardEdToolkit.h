@@ -34,12 +34,20 @@ private:
     };
 
     TSharedPtr<SWidget> CreatePrevBtn();
+    
     TSharedPtr<SWidget> CreateNextBtn();
+    
     TSharedPtr<SWidget> CreateCurrnetNodeView();
+    
     TSharedPtr<SWidget> CreatePrevNodesView();
+    
     TSharedPtr<SWidget> CreateNextNodesView();
+    
     TSharedPtr<SWidget> CreateNodeListView(const TArray<TObjectPtr<AStoryNode>>& List);
+    
     TSharedPtr<SWidget> CreateNodeView(AStoryNode* Node, ImageSize Size);
+
+    TSharedPtr<SWidget> CreateScenarioThumbnailWidget(UStoryScenario* Scenario, int32 Size);
 
     TSharedPtr<SWidget> ViewportOverlayWidget;
 };
