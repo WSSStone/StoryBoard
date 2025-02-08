@@ -220,13 +220,13 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
 }
 
 auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
-    TArray<AStoryNode*> stack {node};
+    TArray<AStoryNode*> queue {node};
     TArray<AStoryNode*> history;
 
     // bfs searching prevs for closest scenario
-    while (!stack.IsEmpty()) {
-        AStoryNode* curr = stack[0];
-        stack.RemoveAt(0);
+    while (!queue.IsEmpty()) {
+        AStoryNode* curr = queue[0];
+        queue.RemoveAt(0);
         history.Add(curr);
 
         if (curr->Scenario.Get()) {
@@ -237,7 +237,7 @@ auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
             if (history.Contains(curr)) {
                 continue;
             }
-            stack.Add(prevNode);
+            queue.Add(prevNode);
         }
     }
 
