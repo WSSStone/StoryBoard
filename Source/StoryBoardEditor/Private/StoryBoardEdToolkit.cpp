@@ -225,7 +225,8 @@ auto BFSPrevForScenario = [](AStoryNode* node) -> UStoryScenario* {
 
     // bfs searching prevs for closest scenario
     while (!stack.IsEmpty()) {
-        AStoryNode* curr = stack.Pop();
+        AStoryNode* curr = stack[0];
+        stack.RemoveAt(0);
         history.Add(curr);
 
         if (curr->Scenario.Get()) {
@@ -263,7 +264,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
     }
 
     TSharedRef<SWidget> iconWidget = SNew(SImage)
-        .Image_Lambda([btnBrush]() { return btnBrush; });
+    .Image_Lambda([btnBrush]() { return btnBrush; });
 
     if (nodeScenario != nullptr) {
         btnName = nodeScenario->Name;
