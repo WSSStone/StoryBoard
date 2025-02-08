@@ -203,7 +203,7 @@ void FStoryNodeHelper::BuildGraph() {
 }
 
 UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario() {
-    if (StartPoint.IsValid()) {
+    if (StartPoint) {
         return BFSNearestPrevScenario(StartPoint.Get());
     }
     return nullptr;
@@ -217,6 +217,9 @@ UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario(AStoryNode* Node) {
         FStoryNodeWrapper* curr = queue[0];
         queue.RemoveAt(0);
         history.Add(curr);
+        if (curr->Node == nullptr) {
+            continue;
+        }
         if (curr->Node->Scenario.Get()) {
             return curr->Node->Scenario.Get();
         }

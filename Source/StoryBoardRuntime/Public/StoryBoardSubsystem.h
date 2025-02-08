@@ -61,7 +61,7 @@ private:
 struct STORYBOARDRUNTIME_API FStoryNodeWrapper {
     FStoryNodeWrapper(AStoryNode* Node) : Node(Node) {}
     ~FStoryNodeWrapper() {}
-    TSoftObjectPtr<AStoryNode> Node;
+    TObjectPtr<AStoryNode> Node;
     TArray<FStoryNodeWrapper*> PrevNodes;
     TArray<FStoryNodeWrapper*> NextNodes;
 };
@@ -86,10 +86,10 @@ public:
 
     virtual UStoryScenario* BFSNearestPrevScenario(AStoryNode* Node);
 
-    TArray<TSoftObjectPtr<AStoryNode>> StoryNodes;
+    TArray<TObjectPtr<AStoryNode>> StoryNodes;
 
     TMap<AStoryNode*, FStoryNodeWrapper> StoryNodeWrappers;
 
 private:
-    TSoftObjectPtr<AStoryNode> StartPoint;
+    TObjectPtr<AStoryNode> StartPoint;
 };

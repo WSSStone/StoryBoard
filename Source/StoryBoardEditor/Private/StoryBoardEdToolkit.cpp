@@ -365,6 +365,10 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
     menuBuilder.SetStyle(&FAppStyle::Get(), "Menu");
 
     for (auto item : List) {
+        if (item == nullptr) {
+            continue;
+        }
+
         FMenuEntryParams entryParams;
 
         entryParams.LabelOverride = FText::FromString(item->GetActorLabel());

@@ -73,7 +73,7 @@ void UStoryBoardEditorSubsystem::CreateStoryAssetHelper() {
 
 void UStoryBoardEditorSubsystem::RemoveStoryAssetHelper() {
     if (StoryAssetHelper.IsValid()) {
-        StoryAssetHelper.Release();
+        StoryAssetHelper.Reset(nullptr);
     }
 }
 
@@ -87,7 +87,7 @@ void UStoryBoardEditorSubsystem::CreateStoryNodeHelper() {
 
 void UStoryBoardEditorSubsystem::RemoveStoryNodeHelper() {
     if (StoryNodeHelper.IsValid()) {
-        StoryNodeHelper.Release();
+        StoryNodeHelper.Reset(nullptr);
     }
 }
 
@@ -511,7 +511,7 @@ void FStoryNodeEditorHelper::AllocateStoryNodes(UWorld* World) {
 
 void FStoryNodeEditorHelper::ReallocateStoryNodes(UWorld* World) {
     for (auto node : StoryNodes) {
-        if (node.IsValid()) {
+        if (node) {
             if (node->OnScenarioPropChanged.IsBound())
                 node->OnScenarioPropChanged.Unbind();
 
