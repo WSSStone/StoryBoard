@@ -75,11 +75,11 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
             + SVerticalBox::Slot()
             .HAlign(HAlign_Center)
             .VAlign(VAlign_Bottom)
-            .AutoHeight()
+            .MaxHeight(155.0)
             [
                 SNew(SBorder)
                 .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                .Padding(8.f)
+                .Padding(0.0)
                 [
                     SNew(SHorizontalBox)
                     + SHorizontalBox::Slot()
@@ -374,25 +374,26 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateAssetThumbnailWidget(UObject* As
 
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
-
-    if (node) return CreateNodeListView(node->PrevPoints);
+    if (AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get()) {
+        return CreateNodeListView(node->PrevPoints);
+    }
 
     return SNew(SBorder);
 }
 
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextNodesView() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get();
-
-    if (node) return CreateNodeListView(node->NextPoints);
+    if (AStoryNode* node = edSubsys->StoryNodeHelper->SelectedNode.Get()) {
+        return CreateNodeListView(node->NextPoints);
+    }
 
     return SNew(SBorder);
 }
 
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjectPtr<AStoryNode>>& List) {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    FMenuBuilder MenuBuilder(true, nullptr);
+    FMenuBuilder menuBuilder(true, nullptr);
+    menuBuilder.SetStyle(&FAppStyle::Get(), "Menu");
 
     for (auto item : List) {
         FMenuEntryParams entryParams;
@@ -409,9 +410,10 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
         entryParams.UserInterfaceActionType = EUserInterfaceActionType::Button;
         entryParams.EntryWidget = CreateNodeView(item.Get(), ImageSize::S20);
 
-        MenuBuilder.AddMenuEntry(entryParams);
+        menuBuilder.AddMenuEntry(entryParams);
     }
-    return MenuBuilder.MakeWidget();
+
+    return menuBuilder.MakeWidget();
 }
 
 #undef LOCTEXT_NAMESPACE

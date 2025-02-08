@@ -47,7 +47,7 @@ private:
     
     TSharedPtr<SWidget> CreateNodeView(AStoryNode* Node, ImageSize Size);
 
-    TSharedPtr<SWidget> CreateScenarioThumbnailWidget(UStoryScenario* Scenario, int32 Size);
+    TSharedPtr<SWidget> CreateAssetThumbnailWidget(UObject* Asset, int32 Size);
 
     TSharedPtr<SWidget> ViewportOverlayWidget;
 };
