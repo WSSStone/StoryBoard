@@ -48,17 +48,6 @@ void FStoryBoardEdToolkit::OnNodeSelectedRedraw(AStoryNode* node) {
 void FStoryBoardEdToolkit::ArrangeWidget() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
 
-    FPropertyEditorModule& editModule = FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-    FDetailsViewArgs detailsViewArgs;
-    detailsViewArgs.bShowObjectLabel = true;
-    detailsViewArgs.bAllowSearch = false;
-    detailsViewArgs.bAllowFavoriteSystem = false;
-    detailsViewArgs.NameAreaSettings = FDetailsViewArgs::ENameAreaSettings::HideNameArea;
-    detailsViewArgs.ViewIdentifier = FName("BlueprintDefaults");
-    auto detailView = editModule.CreateDetailView(detailsViewArgs);
-    auto scenario = edSubsys->GetCurrentScenario();
-    detailView->SetObject(scenario);
-
     auto currentView = CreateCurrnetNodeView();
     auto nextListView = CreateNextNodesView();
     auto prevListView = CreatePrevNodesView();
@@ -272,41 +261,49 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrnetNodeView() {
         templateScenario = BFSPrevForScenario(node);
     }
 
-    auto widget = SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .HAlign(HAlign_Center)
-        .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 2.0, 0.0, 0.0))
+    auto widget = SNew(SBorder)
+        .BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.0f))
+        .OnMouseButtonDown_Lambda([edSubsys, node](const FGeometry&, const FPointerEvent&) {
+            edSubsys->UISelectNode(node);
+            return FReply::Handled();
+        })
         [
-            SNew(STextBlock)
-            .Text(FText::FromString(node->GetActorLabel()))
-        ]
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .HAlign(HAlign_Center)
-        .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
-        [
-            SNew(SButton)
-            .TextStyle(FAppStyle::Get(), "DialogButtonText")
-            .Text_Lambda([btnName]() { return btnName; })
-            .ToolTipText_Lambda([btnToolTip]() { return FText::FromString(btnToolTip); })
+            SNew(SVerticalBox)
+            + SVerticalBox::Slot()
+            .AutoHeight()
             .HAlign(HAlign_Center)
             .VAlign(VAlign_Bottom)
-            .OnClicked_Lambda([edSubsys, node, nodeScenario, templateScenario]() {
-                if (!nodeScenario) {
-                    FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
-                    node->Scenario = LoadObject<UStoryScenario>(nullptr, *path);
-                }
-                if (node->Scenario.IsValid()) {
-                    GEditor->EditObject(node->Scenario.Get());
-                }
-                edSubsys->UISelectNode(node);
-                return FReply::Handled();
-            })
+            .Padding(FMargin(0.0, 2.0, 0.0, 0.0))
             [
-                iconWidget
+                SNew(STextBlock)
+                .Text(FText::FromString(node->GetActorLabel()))
+            ]
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            .HAlign(HAlign_Center)
+            .VAlign(VAlign_Bottom)
+            .Padding(FMargin(0.0, 0.0, 0.0, 2.0))
+            [
+                SNew(SButton)
+                .TextStyle(FAppStyle::Get(), "DialogButtonText")
+                .Text_Lambda([btnName]() { return btnName; })
+                .ToolTipText_Lambda([btnToolTip]() { return FText::FromString(btnToolTip); })
+                .HAlign(HAlign_Center)
+                .VAlign(VAlign_Bottom)
+                .OnClicked_Lambda([edSubsys, node, nodeScenario, templateScenario]() {
+                    if (!nodeScenario) {
+                        FString path = edSubsys->StoryAssetHelper->CreateScenario(templateScenario);
+                        node->Scenario = LoadObject<UStoryScenario>(nullptr, *path);
+                    }
+                    if (node->Scenario.IsValid()) {
+                        GEditor->EditObject(node->Scenario.Get());
+                    }
+                    edSubsys->UISelectNode(node);
+                    return FReply::Handled();
+                })
+                [
+                    iconWidget
+                ]
             ]
         ];
 
