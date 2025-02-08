@@ -40,6 +40,7 @@ void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection
 
 void UStoryBoardEditorSubsystem::Deinitialize() {
     ExitEdMode();
+
     RemoveStoryAssetHelper();
 
     FWorldDelegates::OnCurrentLevelChanged.RemoveAll(this);
@@ -144,6 +145,8 @@ auto FocusActor = [](AActor* actor) {
 
     GEditor->SelectNone(false, true);
     GEditor->SelectActor(actor, true, false, true, true);
+    // in this case, refresh Details panel
+    GEditor->NoteSelectionChange();
 };
 
 FReply UStoryBoardEditorSubsystem::PreviousNode() {
@@ -479,7 +482,6 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
         }
 
         StoryNodes.Add(node);
-
         // bind delegate
         auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
         node->ScenarioPropChangeEvent.BindUObject(edSubsys, &UStoryBoardEditorSubsystem::OnNodePropChange);
@@ -496,7 +498,9 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
 void FStoryNodeHelper::ReallocateStoryNodes(UWorld* World) {
     for (auto node : StoryNodes) {
         // unbind
-
+        if (node->ScenarioPropChangeEvent.IsBound()) {
+            node->ScenarioPropChangeEvent.Unbind();
+        }
     }
     
     AllocateStoryNodes(World);
