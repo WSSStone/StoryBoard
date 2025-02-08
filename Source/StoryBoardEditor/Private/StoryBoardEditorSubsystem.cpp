@@ -104,7 +104,7 @@ void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) 
 
 void UStoryBoardEditorSubsystem::OnNodePropChange(AStoryNode* Node) {
     EdNodeSelectedEvent.Broadcast(Node);
-    OnScenarioPropChange(Node->Scenario.Get());
+    SetupScenario(Node->Scenario.Get());
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {
