@@ -95,10 +95,14 @@ void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
     StoryBoardPtr->SetupScene(StoryBoardPtr->DefaultScenario);
 }
 
-void UStoryBoardEditorSubsystem::OnScenarioChange(UStoryScenario* inp) {
-    if (CurrentScenario.IsValid() && inp == CurrentScenario.Get()) {
-        SetupScenario(inp);
+void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) {
+    if (CurrentScenario.IsValid() && Scenario == CurrentScenario.Get()) {
+        SetupScenario(Scenario);
     }
+}
+
+void UStoryBoardEditorSubsystem::OnNodePropChange(AStoryNode* Node) {
+    EdNodeSelectedEvent.Broadcast(Node);
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {
@@ -197,7 +201,7 @@ void UStoryBoardEditorSubsystem::SetCurrentScenario(UStoryScenario* Scenario) {
 
     if (CurrentScenario.IsValid()) {
         SetupScenario(CurrentScenario.Get());
-        CurrentScenario->OnStoryScenarioChanged.BindUObject(this, &UStoryBoardEditorSubsystem::OnScenarioChange);
+        CurrentScenario->OnStoryScenarioChanged.BindUObject(this, &UStoryBoardEditorSubsystem::OnScenarioPropChange);
     }
 }
 
@@ -444,7 +448,7 @@ FStoryNodeHelper::FStoryNodeHelper(UWorld* World) {
     AllocateStoryNodes(World);
 
     FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
-        if (!actors.IsEmpty()) AllocateStoryNodes(actors[0]->GetWorld());
+        if (!actors.IsEmpty()) ReallocateStoryNodes(actors[0]->GetWorld());
         });
     FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeHelper::OnStoryNodeAddedOrRemoved);
@@ -462,7 +466,7 @@ FStoryNodeHelper::~FStoryNodeHelper() {
 
 void FStoryNodeHelper::OnStoryNodeAddedOrRemoved() {
     UWorld* World = GEditor->GetEditorWorldContext().World();
-    AllocateStoryNodes(World);
+    ReallocateStoryNodes(World);
 }
 
 void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
@@ -476,6 +480,10 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
 
         StoryNodes.Add(node);
 
+        // bind delegate
+        auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+        node->ScenarioPropChangeEvent.BindUObject(edSubsys, &UStoryBoardEditorSubsystem::OnNodePropChange);
+
         // set up edMode-only property PrevPoints
         for (auto child : node->NextPoints) {
             if (!child->PrevPoints.Contains(node)) {
@@ -483,6 +491,15 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
             }
         }
     }
+}
+
+void FStoryNodeHelper::ReallocateStoryNodes(UWorld* World) {
+    for (auto node : StoryNodes) {
+        // unbind
+
+    }
+    
+    AllocateStoryNodes(World);
 }
 
 FString FStoryAssetHelper::CreateScenario(UStoryScenario* TemplateScenario) {

@@ -12,6 +12,10 @@ void AStoryNode::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
         }
     }
 
+    if (PropertyName == GET_MEMBER_NAME_CHECKED(AStoryNode, Scenario)) {
+        ScenarioPropChangeEvent.ExecuteIfBound(this);
+    }
+
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif

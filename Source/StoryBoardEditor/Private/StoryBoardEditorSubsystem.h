@@ -61,7 +61,6 @@ public:
     void OnEnterEdMode();
     // callback when exit StoryBoardEdMode
     void OnExitEdMode();
-
     // enter StoryBoardEdMode
     void EnterEdMode();
     // exit StoryBoardEdMode
@@ -72,8 +71,10 @@ public:
     FReply UISelectNode(AStoryNode* Node);
 
     void SetCurrentNode(AStoryNode* Node);
+    void OnNodePropChange(AStoryNode* Node);
+
     void SetCurrentScenario(UStoryScenario* Scenario);
-    void OnScenarioChange(UStoryScenario* inp);
+    void OnScenarioPropChange(UStoryScenario* inp);
 
     // helper objects
     FORCEINLINE void CreateStoryAssetHelper();
@@ -109,7 +110,10 @@ public:
 
     void OnStoryNodeAddedOrRemoved();
 
+    // Check all story nodes in world, and make delegate bindings.
     void AllocateStoryNodes(UWorld* World);
+
+    void ReallocateStoryNodes(UWorld* World);
 
     TSoftObjectPtr<AStoryNode> SelectedNode;
 

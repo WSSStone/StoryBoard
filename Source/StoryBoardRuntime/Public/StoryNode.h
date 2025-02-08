@@ -19,6 +19,9 @@ public:
 
 #if WITH_EDITOR
     TArray<TObjectPtr<AStoryNode>> PrevPoints;
+    
+    DECLARE_DELEGATE_OneParam(FScenraioPropChange, AStoryNode*)
+    FScenraioPropChange ScenarioPropChangeEvent;
 
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // !WITH_EIDTOR
