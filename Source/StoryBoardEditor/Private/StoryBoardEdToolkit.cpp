@@ -296,24 +296,40 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeView(AStoryNode* Node, Image
 
     UStoryScenario* templateScenario = edSubsys->StoryNodeHelper->BFSNearestPrevScenario();
 
-    auto widget = SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .HAlign(HAlign_Center)
-        .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 2.0, 0.0, 2.0))
+    auto widget = SNew(SBox)
         [
-            SNew(STextBlock)
-            .Text(FText::FromString(Node->GetActorLabel()))
-        ]
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        .HAlign(HAlign_Center)
-        .VAlign(VAlign_Bottom)
-        .Padding(0.0)
-        [
-            iconWidget
+            SNew(SVerticalBox)
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            .HAlign(HAlign_Center)
+            .VAlign(VAlign_Bottom)
+            .Padding(FMargin(0.0, 2.0, 0.0, 2.0))
+            [
+                SNew(STextBlock)
+                .Text(FText::FromString(Node->GetActorLabel()))
+            ]
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            .HAlign(HAlign_Center)
+            .VAlign(VAlign_Bottom)
+            .Padding(0.0)
+            [
+                iconWidget
+            ]
         ];
+
+    FNoReplyPointerEventHandler enterHandler;
+    enterHandler.BindLambda([edSubsys, Node](const FGeometry&, const FPointerEvent&) {
+        edSubsys->SetHintNode(Node);
+    });
+
+    widget.Get().SetOnMouseEnter(enterHandler);
+
+    FSimpleNoReplyPointerEventHandler leaveHandler;
+    leaveHandler.BindLambda([edSubsys](const FPointerEvent&) {
+        edSubsys->RemoveHintNode();
+    });
+    widget.Get().SetOnMouseLeave(leaveHandler);
 
     return widget;
 }
@@ -382,6 +398,11 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
         entryParams.ExtensionHook = NAME_None;
         entryParams.UserInterfaceActionType = EUserInterfaceActionType::Button;
         entryParams.EntryWidget = CreateNodeView(item.Get(), ImageSize::S20);
+
+        /*
+            .OnHovered_Lambda([edSubsys, node]() { edSubsys->SetHintNode(node); })
+            .OnUnhovered_UObject(edSubsys, &UStoryBoardEditorSubsystem::RemoveHintNode)
+        */
 
         menuBuilder.AddMenuEntry(entryParams);
     }

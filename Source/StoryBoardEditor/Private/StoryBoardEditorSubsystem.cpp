@@ -4,6 +4,7 @@
 #include "StoryBoardEdMode.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "EditorModeManager.h"
 #include "EditorModes.h"
 #include "UnrealEdGlobals.h"
@@ -81,8 +82,6 @@ void UStoryBoardEditorSubsystem::CreateStoryNodeHelper() {
     RemoveStoryNodeHelper();
     StoryNodeHelper = MakeUnique<FStoryNodeEditorHelper>(GEditor->GetEditorWorldContext().World());
     StoryNodeHelper->BuildGraph();
-
-    return;
 }
 
 void UStoryBoardEditorSubsystem::RemoveStoryNodeHelper() {
@@ -90,6 +89,32 @@ void UStoryBoardEditorSubsystem::RemoveStoryNodeHelper() {
         StoryNodeHelper.Reset(nullptr);
     }
 }
+
+void UStoryBoardEditorSubsystem::CreateStoryBoardViewportDrawer() {
+    RemoveStoryBoardViewportDrawer();
+
+    auto drawSettings = GetMutableDefault<UStoryBoardEditorSettings>();
+    StoryBoardViewportDrawer = MakeUnique<FStoryBoardViewportDrawer>(
+        this,
+        drawSettings->StoryBoardPreEdgeView,
+        drawSettings->StoryBoardNextEdgeView,
+        drawSettings->StoryBoardHintPointView);
+}
+
+void UStoryBoardEditorSubsystem::RemoveStoryBoardViewportDrawer() {
+    if (StoryBoardViewportDrawer.IsValid()) {
+        StoryBoardViewportDrawer.Reset(nullptr);
+    }
+}
+
+void UStoryBoardEditorSubsystem::SetHintNode(AStoryNode* Node) {
+    StoryBoardViewportDrawer->HintNode = Node;
+}
+
+void UStoryBoardEditorSubsystem::RemoveHintNode() {
+    StoryBoardViewportDrawer->HintNode = nullptr;
+}
+
 
 void UStoryBoardEditorSubsystem::HandleEditorBeginPIE(bool) {
     ExitEdMode();
@@ -110,7 +135,7 @@ void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
 }
 
 void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) {
-    if (CurrentScenario.IsValid() && Scenario == CurrentScenario.Get()) {
+    if (CurrentScenario != nullptr && Scenario == CurrentScenario.Get()) {
         SetupScenario(Scenario);
     }
 }
@@ -126,7 +151,9 @@ void UStoryBoardEditorSubsystem::HandleNodeNextPointsChange(AStoryNode* Node) {
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {
+    isEdMode = true;
     CreateStoryNodeHelper();
+    CreateStoryBoardViewportDrawer();
 
     // assign a default StoryNode actor
     TArray<UObject*> selectedActors;
@@ -141,7 +168,9 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
+    RemoveStoryBoardViewportDrawer();
     RemoveStoryNodeHelper();
+    isEdMode = false;
 }
 
 void UStoryBoardEditorSubsystem::EnterEdMode() {
@@ -172,7 +201,7 @@ FReply UStoryBoardEditorSubsystem::PreviousNode() {
     // Point Current to Previous
     TArray<TObjectPtr<AStoryNode>> arr;
     StoryNodeHelper->GetPrevStoryNodes(arr);
-    if (StoryNodeHelper->SelectedNode.IsValid() && !arr.IsEmpty()) {
+    if (StoryNodeHelper->SelectedNode != nullptr && !arr.IsEmpty()) {
         SetCurrentNode(arr[0].Get());
         FocusActor(StoryNodeHelper->SelectedNode.Get());
     }
@@ -184,7 +213,7 @@ FReply UStoryBoardEditorSubsystem::NextNode() {
     // Point Current to Next
     TArray<TObjectPtr<AStoryNode>> arr; 
     StoryNodeHelper->GetNextStoryNodes(arr);
-    if (StoryNodeHelper->SelectedNode.IsValid() && !arr.IsEmpty()) {
+    if (StoryNodeHelper->SelectedNode != nullptr && !arr.IsEmpty()) {
         SetCurrentNode(arr[0].Get());
         FocusActor(StoryNodeHelper->SelectedNode.Get());
     }
@@ -215,17 +244,17 @@ void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
 }
 
 void UStoryBoardEditorSubsystem::SetCurrentScenario(UStoryScenario* Scenario) {
-    if (CurrentScenario.IsValid() && Scenario == CurrentScenario.Get()) {
+    if (CurrentScenario != nullptr && Scenario == CurrentScenario.Get()) {
         return;
     }
 
-    if (CurrentScenario.IsValid() && CurrentScenario->OnStoryScenarioChanged.IsBound()) {
+    if (CurrentScenario != nullptr && CurrentScenario->OnStoryScenarioChanged.IsBound()) {
         CurrentScenario->OnStoryScenarioChanged.Unbind();
     }
 
     CurrentScenario = Scenario;
 
-    if (CurrentScenario.IsValid()) {
+    if (CurrentScenario != nullptr) {
         SetupScenario(CurrentScenario.Get());
         CurrentScenario->OnStoryScenarioChanged.BindUObject(this, &UStoryBoardEditorSubsystem::OnScenarioPropChange);
     }
@@ -531,7 +560,7 @@ void FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved() {
 }
 
 UStoryScenario* FStoryNodeEditorHelper::BFSNearestPrevScenario() {
-    if (SelectedNode.IsValid()) {
+    if (SelectedNode != nullptr) {
         return FStoryNodeHelper::BFSNearestPrevScenario(SelectedNode.Get());
     }
     return nullptr;
@@ -598,6 +627,95 @@ void FStoryAssetHelper::RaiseSaveAssetWindow(FString& AssetPath) {
     dialogConfig.ExistingAssetPolicy = ESaveAssetDialogExistingAssetPolicy::Disallow;
 
     AssetPath = contentBrowserModule.Get().CreateModalSaveAssetDialog(dialogConfig);
+}
+
+FStoryBoardViewportDrawer::FStoryBoardViewportDrawer(UStoryBoardEditorSubsystem* Owner) :
+    Owner(Owner) {
+    World = Owner->GetWorld();
+}
+
+FStoryBoardViewportDrawer::FStoryBoardViewportDrawer(UStoryBoardEditorSubsystem* Owner,
+    const FDrawAttribute& PrevAttrib,
+    const FDrawAttribute& NextAttrib,
+    const FDrawAttribute& HintAttrib) :
+    PrevAttrib(PrevAttrib),
+    NextAttrib(NextAttrib),
+    HintAttrib(HintAttrib),
+    Owner(Owner) {
+    World = Owner->GetWorld();
+}
+
+FStoryBoardViewportDrawer::~FStoryBoardViewportDrawer() {
+
+}
+
+void FStoryBoardViewportDrawer::Tick(float DeltaTime) {
+    if (!Owner->IsEdMode()) {
+        return;
+    }
+
+    if (Owner->StoryNodeHelper->SelectedNode != nullptr) {
+        DrawEdges();
+    }
+
+    DrawHint();
+}
+
+bool FStoryBoardViewportDrawer::IsTickable() const {
+    UWorld* world = GEditor->GetEditorWorldContext().World();
+    return World != nullptr;
+}
+
+TStatId FStoryBoardViewportDrawer::GetStatId() const {
+    return TStatId();
+}
+
+void FStoryBoardViewportDrawer::DrawEdges() {
+    auto cur = Owner->StoryNodeHelper->StoryNodeWrappers.Find(Owner->StoryNodeHelper->SelectedNode.Get());
+
+    if (cur == nullptr || cur->Node == nullptr) {
+        return;
+    }
+
+    for (auto prev : cur->PrevNodes) {
+        if (prev->Node == nullptr) {
+            continue;
+        }
+
+        UKismetSystemLibrary::DrawDebugArrow(World,
+            prev->Node->GetActorLocation(),
+            cur->Node->GetActorLocation(),
+            PrevAttrib.Size,
+            PrevAttrib.Color,
+            PrevAttrib.LifeTime,
+            PrevAttrib.ThickNess);
+    }
+
+    for (auto next : cur->NextNodes) {
+        if (next->Node == nullptr) {
+            continue;
+        }
+
+        UKismetSystemLibrary::DrawDebugArrow(World,
+            cur->Node->GetActorLocation(),
+            next->Node->GetActorLocation(),
+            NextAttrib.Size,
+            NextAttrib.Color,
+            NextAttrib.LifeTime,
+            NextAttrib.ThickNess);
+    }
+}
+
+void FStoryBoardViewportDrawer::DrawHint() {
+    if (HintNode == nullptr) {
+        return;
+    }
+
+    UKismetSystemLibrary::DrawDebugPoint(World,
+        HintNode->GetActorLocation(),
+        HintAttrib.Size,
+        HintAttrib.Color,
+        HintAttrib.LifeTime);
 }
 
 #undef LOCTEXT_NAMESPACE

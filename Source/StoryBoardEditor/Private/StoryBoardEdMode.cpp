@@ -26,14 +26,11 @@ void UStoryBoardEdMode::Enter() {
 
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     edSubsys->EdNodeSelectedEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
-    edSubsys->isEdMode = true;
-    GEditor->Exec(edSubsys->GetWorld(), TEXT("SCAct.DrawMovePoint 1"));
 }
 
 void UStoryBoardEdMode::Exit() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    GEditor->Exec(edSubsys->GetWorld(), TEXT("SCAct.DrawMovePoint 0"));
-    edSubsys->isEdMode = false;
+
     edSubsys->EdNodeSelectedEvent.RemoveAll(Toolkit.Get());
     edSubsys->OnExitEdMode();
 

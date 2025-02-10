@@ -82,6 +82,7 @@ public:
 
     virtual void BuildGraph();
 
+    // from StartPoint by default
     virtual UStoryScenario* BFSNearestPrevScenario();
 
     virtual UStoryScenario* BFSNearestPrevScenario(AStoryNode* Node);

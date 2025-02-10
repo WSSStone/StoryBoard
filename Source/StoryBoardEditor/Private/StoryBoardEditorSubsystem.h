@@ -1,16 +1,20 @@
 # pragma once
 
+#include "StoryBoardEditorSettings.h"
 #include "StoryNode.h"
 #include "StoryBoardSubsystem.h"
 
 #include "CoreMinimal.h"
 #include "LevelEditor.h"
 #include "EditorSubsystem.h"
+#include "Math/Color.h"
+#include "Math/MathFwd.h"
 
 #include "StoryBoardEditorSubsystem.generated.h"
 
 class FStoryNodeEditorHelper;
 class FStoryAssetHelper;
+class FStoryBoardViewportDrawer;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, AStoryNode*)
 
@@ -39,6 +43,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     UStoryScenario* GetCurrentScenario();
+
+    UFUNCTION(BlueprintCallable)
+    bool IsEdMode() { return isEdMode; }
 
     UFUNCTION(BlueprintCallable)
     void SetDefaultScenario(UStoryScenario* in);
@@ -84,6 +91,11 @@ public:
     FORCEINLINE void RemoveStoryAssetHelper();
     FORCEINLINE void CreateStoryNodeHelper();
     FORCEINLINE void RemoveStoryNodeHelper();
+    FORCEINLINE void CreateStoryBoardViewportDrawer();
+    FORCEINLINE void RemoveStoryBoardViewportDrawer();
+
+    void SetHintNode(AStoryNode* Node);
+    void RemoveHintNode();
 
     TUniquePtr<FStoryNodeEditorHelper> StoryNodeHelper;
     TUniquePtr<FStoryAssetHelper> StoryAssetHelper;
@@ -91,17 +103,17 @@ public:
 private:
     bool isEdMode { false };
 
-    TSoftObjectPtr<UStoryScenario> CurrentScenario;
+    TUniquePtr<FStoryBoardViewportDrawer> StoryBoardViewportDrawer;
 
-    UStoryBoardSubsystem* StoryBoardPtr;
+    TObjectPtr<UStoryScenario> CurrentScenario;
+
+    TObjectPtr<UStoryBoardSubsystem> StoryBoardPtr;
 
     void HandleEditorBeginPIE(bool);
 
     void HandleOnMapOpened(const FString& Filename, bool bAsTemplate);
 
     void OnCurrentLevelChanged(ULevel* InNewLevel, ULevel* InOldLevel, UWorld* InWorld);
-
-    friend class UStoryBoardEdMode;
 };
 
 /*
@@ -141,5 +153,41 @@ public:
 
     void GetImmeidateNodes(TArray<TObjectPtr<AStoryNode>>& Ret, AStoryNode* Node, bool bParent = true);
 
-    TSoftObjectPtr<AStoryNode> SelectedNode;
+    TObjectPtr<AStoryNode> SelectedNode;
+};
+
+/*
+    Helper class draw viewport elements in StoryBoardEdMode
+*/
+class FStoryBoardViewportDrawer : public FTickableEditorObject {
+public:
+    FStoryBoardViewportDrawer(UStoryBoardEditorSubsystem* Owner);
+
+    FStoryBoardViewportDrawer(UStoryBoardEditorSubsystem* Owner,
+        const FDrawAttribute& PrevAttrib,
+        const FDrawAttribute& NextAttrib,
+        const FDrawAttribute& HintAttrib);
+
+    ~FStoryBoardViewportDrawer();
+
+    virtual void Tick(float DeltaTime) override;
+
+    bool IsTickable() const override;
+
+    virtual TStatId GetStatId() const override;
+
+    TObjectPtr<AStoryNode> HintNode;
+
+private:
+    void DrawEdges();
+
+    void DrawHint();
+
+    TObjectPtr<UStoryBoardEditorSubsystem> Owner;
+
+    UWorld* World;
+
+    FDrawAttribute PrevAttrib;
+    FDrawAttribute NextAttrib;
+    FDrawAttribute HintAttrib;
 };
