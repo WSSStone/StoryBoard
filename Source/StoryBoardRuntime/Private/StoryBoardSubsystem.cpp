@@ -176,6 +176,10 @@ void FStoryNodeHelper::AllocateStoryNodes(UWorld* World) {
 void FStoryNodeHelper::BuildGraph() {
     StoryNodeWrappers.Reserve(StoryNodes.Num());
     for (auto node : StoryNodes) {
+        if (node == nullptr) {
+            continue;
+        }
+
         auto wrapper = StoryNodeWrappers.Find(node.Get());
         if (wrapper == nullptr) {
             wrapper = &StoryNodeWrappers.Add(node.Get(), FStoryNodeWrapper(node.Get()));
@@ -210,7 +214,12 @@ UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario() {
 }
 
 UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario(AStoryNode* Node) {
-    TArray<FStoryNodeWrapper*> queue {&StoryNodeWrappers[Node]};
+    auto wrapper = StoryNodeWrappers.Find(Node);
+    if (wrapper == nullptr) {
+        return nullptr;
+    }
+
+    TArray<FStoryNodeWrapper*> queue {wrapper};
     TArray<FStoryNodeWrapper*> history;
 
     while (!queue.IsEmpty()) {

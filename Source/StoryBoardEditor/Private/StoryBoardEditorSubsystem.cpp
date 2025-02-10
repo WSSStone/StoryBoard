@@ -419,6 +419,9 @@ void UStoryBoardEditorSubsystem::OnLevelEditorCreatedEvent(TSharedPtr<ILevelEdit
 }
 
 TSharedRef<SDockTab> UStoryBoardEditorSubsystem::SummonScenarioEditor() {
+    // this interface and object filter is gud
+    // but the window should be concerned like a graph editor
+
     TArray<UStoryScenario*> matchingScenarios;
     UWorld* currentWorld = GEditor->GetEditorWorldContext().World();
     if (currentWorld == nullptr) {
@@ -503,9 +506,10 @@ FStoryNodeEditorHelper::FStoryNodeEditorHelper(UWorld* World) {
     AllocateStoryNodes(World);
     BuildGraph();
 
-    FEditorDelegates::OnNewActorsPlaced.AddLambda([this](UObject* uobject, const TArray<AActor*>& actors) {
+    FEditorDelegates::OnNewActorsDropped.AddLambda([this](const TArray<UObject*>& uobjects, const TArray<AActor*>& actors) {
         if (!actors.IsEmpty()) ReallocateStoryNodes(actors[0]->GetWorld());
         });
+    // FEditorDelegates::ActorPropertiesChange.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
@@ -515,7 +519,8 @@ FStoryNodeEditorHelper::~FStoryNodeEditorHelper() {
     FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
-    FEditorDelegates::OnNewActorsPlaced.RemoveAll(this);
+    // FEditorDelegates::ActorPropertiesChange.RemoveAll(this);
+    FEditorDelegates::OnNewActorsDropped.RemoveAll(this);
 
     StoryNodeWrappers.Empty();
     StoryNodes.Empty();
@@ -547,9 +552,10 @@ void FStoryNodeEditorHelper::ReallocateStoryNodes(UWorld* World) {
             if (node->OnNextPointsPropChanged.IsBound())
                 node->OnNextPointsPropChanged.Unbind();
         }
-        
-        StoryNodes.Remove(node);
     }
+    StoryNodes.Empty();
+    StoryNodeWrappers.Empty();
+
     AllocateStoryNodes(World);
     BuildGraph();
 }
@@ -672,7 +678,6 @@ TStatId FStoryBoardViewportDrawer::GetStatId() const {
 
 void FStoryBoardViewportDrawer::DrawEdges() {
     auto cur = Owner->StoryNodeHelper->StoryNodeWrappers.Find(Owner->StoryNodeHelper->SelectedNode.Get());
-
     if (cur == nullptr || cur->Node == nullptr) {
         return;
     }
