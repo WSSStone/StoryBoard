@@ -51,11 +51,11 @@ public:
     void SetDefaultScenario(UStoryScenario* in);
 
     void ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands);
-
-    void SetupWeather(const FWeatherStatus& WeatherStatus);
-
+    
     // Setup data layer editor status: bEditorVisible, bLoaded
     void SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses);
+
+    void SetupWeather(const FWeatherStatus& WeatherStatus);
 
     // EdMode
     UE_DEPRECATED(5.4, "No longer standalone window. Use EditorMode instead.")

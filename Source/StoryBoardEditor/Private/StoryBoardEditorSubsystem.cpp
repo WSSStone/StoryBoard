@@ -131,7 +131,7 @@ void UStoryBoardEditorSubsystem::OnCurrentLevelChanged(ULevel* InNewLevel, ULeve
 }
 
 void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
-    StoryBoardPtr->SetupScene(StoryBoardPtr->DefaultScenario);
+    StoryBoardPtr->SetupScene(StoryBoardPtr->DefaultScenario, EExecuteFlag::GAME_BEGIN);
 }
 
 void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) {
@@ -296,8 +296,8 @@ void UStoryBoardEditorSubsystem::ExecuteCommands(const TArray<FStatusCommand>& C
     if (world == nullptr) {
         UE_LOG(LogStoryBoardEditor, Warning, TEXT("Invalid World context while executing command"));
         return;
-    }
-    
+    }    
+
     for (const FStatusCommand& cmd : ConsoleCommands) {
         if (cmd.Command.IsEmpty()) {
             continue;
@@ -305,6 +305,25 @@ void UStoryBoardEditorSubsystem::ExecuteCommands(const TArray<FStatusCommand>& C
 
         // call execute command
         GEditor->Exec(world, *cmd.Command);
+    }
+}
+
+void UStoryBoardEditorSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses) {
+    UDataLayerEditorSubsystem* dataLayerEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UDataLayerEditorSubsystem>() : nullptr;
+
+    if (dataLayerEditorSubsystem == nullptr) {
+        UE_LOG(LogStoryBoardEditor, Display, TEXT("Cannot get UDataLayerEditorSubsystem singleton."));
+        return;
+    }
+
+    for (const FDataLayerStatus& dataLayerStatus : DataLayerStatuses) {
+        UDataLayerInstance* inst = dataLayerEditorSubsystem->GetDataLayerInstance(dataLayerStatus.DataLayerAsset.Get());
+        if (inst == nullptr) {
+            continue;
+        }
+
+        dataLayerEditorSubsystem->SetDataLayerVisibility(inst, dataLayerStatus.bEditorVisible);
+        dataLayerEditorSubsystem->SetDataLayerIsLoadedInEditor(inst, dataLayerStatus.bLoaded, true);
     }
 }
 
@@ -373,25 +392,6 @@ void UStoryBoardEditorSubsystem::SetupWeather(const FWeatherStatus& WeatherStatu
         FPropertyChangedEvent propertyChangedEvent(property);
         propertyChangedEvent.ChangeType = EPropertyChangeType::ValueSet;
         udw->PostEditChangeProperty(propertyChangedEvent);
-    }
-}
-
-void UStoryBoardEditorSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses) {
-    UDataLayerEditorSubsystem* dataLayerEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UDataLayerEditorSubsystem>() : nullptr;
-
-    if (dataLayerEditorSubsystem == nullptr) {
-        UE_LOG(LogStoryBoardEditor, Display, TEXT("Cannot get UDataLayerEditorSubsystem singleton."));
-        return;
-    }
-
-    for (const FDataLayerStatus& dataLayerStatus : DataLayerStatuses) {
-        UDataLayerInstance* inst = dataLayerEditorSubsystem->GetDataLayerInstance(dataLayerStatus.DataLayerAsset.Get());
-        if (inst == nullptr) {
-            continue;
-        }
-
-        dataLayerEditorSubsystem->SetDataLayerVisibility(inst, dataLayerStatus.bEditorVisible);
-        dataLayerEditorSubsystem->SetDataLayerIsLoadedInEditor(inst, dataLayerStatus.bLoaded, true);
     }
 }
 
@@ -520,6 +520,16 @@ FStoryNodeEditorHelper::~FStoryNodeEditorHelper() {
     FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
     FEditorDelegates::OnNewActorsDropped.RemoveAll(this);
 
+    for (auto node : StoryNodes) {
+        if (node) {
+            if (node->OnScenarioPropChanged.IsBound())
+                node->OnScenarioPropChanged.Unbind();
+
+            if (node->OnNextPointsPropChanged.IsBound())
+                node->OnNextPointsPropChanged.Unbind();
+        }
+    }
+
     StoryNodeWrappers.Empty();
     StoryNodes.Empty();
 }
@@ -642,10 +652,10 @@ FStoryBoardViewportDrawer::FStoryBoardViewportDrawer(UStoryBoardEditorSubsystem*
     const FDrawAttribute& PrevAttrib,
     const FDrawAttribute& NextAttrib,
     const FDrawAttribute& HintAttrib) :
+    Owner(Owner),
     PrevAttrib(PrevAttrib),
     NextAttrib(NextAttrib),
-    HintAttrib(HintAttrib),
-    Owner(Owner) {
+    HintAttrib(HintAttrib) {
     World = Owner->GetWorld();
 }
 
