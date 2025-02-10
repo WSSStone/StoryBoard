@@ -509,7 +509,6 @@ FStoryNodeEditorHelper::FStoryNodeEditorHelper(UWorld* World) {
     FEditorDelegates::OnNewActorsDropped.AddLambda([this](const TArray<UObject*>& uobjects, const TArray<AActor*>& actors) {
         if (!actors.IsEmpty()) ReallocateStoryNodes(actors[0]->GetWorld());
         });
-    // FEditorDelegates::ActorPropertiesChange.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
@@ -519,7 +518,6 @@ FStoryNodeEditorHelper::~FStoryNodeEditorHelper() {
     FEditorDelegates::OnDeleteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnEditPasteActorsEnd.RemoveAll(this);
     FEditorDelegates::OnDuplicateActorsEnd.RemoveAll(this);
-    // FEditorDelegates::ActorPropertiesChange.RemoveAll(this);
     FEditorDelegates::OnNewActorsDropped.RemoveAll(this);
 
     StoryNodeWrappers.Empty();

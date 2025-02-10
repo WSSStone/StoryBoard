@@ -22,9 +22,11 @@ void FStoryBoardEditorModule::StartupModule() {
     UStoryBoardEditorSettings* Settings = GetMutableDefault<UStoryBoardEditorSettings>();
     ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
     if (SettingsModule) {
-        SettingsModule->RegisterSettings("Project", TEXT("Project"), TEXT("StoryBoardEditor"),
-            LOCTEXT("StoryBoardEditor", "StoryBoardEditor"),
-            LOCTEXT("StoryBoardEditor", "StoryBoardEditor"),
+        SettingsModule->RegisterSettings("Project",
+            TEXT("Plugins"),
+            TEXT("Story Board"),
+            LOCTEXT("StoryBoardEditorDisplayName", "Story Board"),
+            LOCTEXT("StoryBoardEditorDescription", "Configure Story Board Settings"),
             Settings);
     }
 }
@@ -36,7 +38,7 @@ void FStoryBoardEditorModule::ShutdownModule() {
 
     ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
     if (SettingsModule) {
-        SettingsModule->UnregisterSettings("Project", TEXT("Project"), TEXT("StoryBoardEditor"));
+        SettingsModule->UnregisterSettings("Project", TEXT("Plugins"), TEXT("Story Board"));
     }
 
     FStoryScenarioAssetActions::UnregisterAssetTypeActions();

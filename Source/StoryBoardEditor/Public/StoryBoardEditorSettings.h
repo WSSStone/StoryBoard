@@ -28,12 +28,12 @@ class STORYBOARDEDITOR_API UStoryBoardEditorSettings : public UObject {
     GENERATED_BODY()
 public:
     UPROPERTY(Config, EditAnywhere, meta = (DisplayName = "Previous Edges View"))
-    FDrawAttribute StoryBoardPreEdgeView;
+    FDrawAttribute StoryBoardPreEdgeView {20.0f, FLinearColor(1.000000, 0.217016, 0.648386, 1.000000), 0.0f, 1.0f};
 
     UPROPERTY(Config, EditAnywhere, meta = (DisplayName = "Next Edges View"))
-    FDrawAttribute StoryBoardNextEdgeView;
+    FDrawAttribute StoryBoardNextEdgeView {20.0f, FLinearColor(1.000000, 0.588147, 0.300841, 1.000000), 0.0f, 1.0f};
     
     UPROPERTY(Config, EditAnywhere, meta = (DisplayName = "Hovered Node View"))
-    FDrawAttribute StoryBoardHintPointView;
+    FDrawAttribute StoryBoardHintPointView {100.0f, FLinearColor(0.317569, 0.644411, 1.000000, 0.100000), 0.0f, 1.0f};
 };
 

@@ -73,7 +73,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     SNew(SHorizontalBox)
                     + SHorizontalBox::Slot()
                     .AutoWidth()
-                    .VAlign(VAlign_Bottom)
+                    .VAlign(VAlign_Center)
                     .HAlign(HAlign_Right)
                     .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                     [
@@ -114,7 +114,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     ]
                     + SHorizontalBox::Slot()
                     .AutoWidth()
-                    .VAlign(VAlign_Bottom)
+                    .VAlign(VAlign_Center)
                     .HAlign(HAlign_Left)
                     .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                     [
@@ -192,6 +192,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevBtn() {
         .ToolTipText(LOCTEXT("PrevNodeTooltip", "Select Previous Node"))
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Center)
+        .DesiredSizeScale(FVector2D(1.0f, 1.0f))
         .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::PreviousNode);
      return widget;
 }
@@ -204,7 +205,9 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
         .ToolTipText(LOCTEXT("NextNodeTooltip", "Select Next Node"))
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Center)
+        .DesiredSizeScale(FVector2D(1.0f, 1.0f))
         .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::NextNode);
+
     return widget;
 }
 
