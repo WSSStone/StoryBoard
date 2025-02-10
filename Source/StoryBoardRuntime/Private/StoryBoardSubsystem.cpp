@@ -15,7 +15,7 @@ void UStoryBoardSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 
     StoryNodeHelper = MakeUnique<FStoryNodeHelper>();
 
-    FWorldDelegates::OnWorldInitializedActors.AddUObject(this, &UStoryBoardSubsystem::HandleInitializedActors);
+    FWorldDelegates::OnWorldInitializedActors.AddUObject(this, &UStoryBoardSubsystem::HandleInitializedActors); // called after this world's actors are initialized
 
     // fall back to default scenario
     GConfig->GetString(
@@ -27,7 +27,7 @@ void UStoryBoardSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 
     TryLoadDefaultScenario(world->GetMapName());
     if (DefaultScenario) {
-        SetupScene(DefaultScenario);
+        SetupScene(DefaultScenario, EExecuteFlag::GAME_BEGIN);
     }
 }
 
@@ -49,12 +49,12 @@ void UStoryBoardSubsystem::HandleInitializedActors(const FActorsInitializedParam
     auto scenario = StoryNodeHelper->BFSNearestPrevScenario();
 
     if (scenario) {
-        SetupScene(scenario);
+        SetupScene(scenario, EExecuteFlag::GAME_BEGIN);
         return;
     }
 }
 
-void UStoryBoardSubsystem::SetupScene(UStoryScenario* Scenario) {
+void UStoryBoardSubsystem::SetupScene(UStoryScenario* Scenario, EExecuteFlag ExecuteFlag) {
     if (Scenario == nullptr) {
         UE_LOG(LogStoryBoard, Warning, TEXT("Input Scenario is nullptr."));
         return;
@@ -62,10 +62,10 @@ void UStoryBoardSubsystem::SetupScene(UStoryScenario* Scenario) {
 
     CurrentScenario = Scenario;
 
-    ExecuteCommands(Scenario->ConsoleCommands);
-    SetupActorVisibilities(Scenario->ActorVisibilities);
+    SetupDataLayerStatus(Scenario->DataLayerStatuses, ExecuteFlag);
+    ExecuteCommands(Scenario->ConsoleCommands, ExecuteFlag);
+    SetupActorVisibilities(Scenario->ActorVisibilities, ExecuteFlag);
     SetupWeather(Scenario->WeatherStatus);
-    SetupDataLayerStatus(Scenario->DataLayerStatuses);
 }
 
 void UStoryBoardSubsystem::SetDefaultScenario(UStoryScenario* in) {
@@ -79,7 +79,7 @@ void UStoryBoardSubsystem::SetDefaultScenario(UStoryScenario* in) {
     );
 }
 
-void UStoryBoardSubsystem::ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands) {
+void UStoryBoardSubsystem::ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands, EExecuteFlag ExecuteFlag) {
     UWorld* World = GetWorld();
     if (World == nullptr) {
         UE_LOG(LogStoryBoard, Warning, TEXT("Invalid World context while executing command"));
@@ -87,7 +87,7 @@ void UStoryBoardSubsystem::ExecuteCommands(const TArray<FStatusCommand>& Console
     }
 
     for (const FStatusCommand& cmd : ConsoleCommands) {
-        if (cmd.Command.IsEmpty()) {
+        if (((uint8)ExecuteFlag & (uint8)cmd.ExecuteFlag) == 0 || cmd.Command.IsEmpty()) {
             continue;
         }
 
@@ -95,12 +95,15 @@ void UStoryBoardSubsystem::ExecuteCommands(const TArray<FStatusCommand>& Console
     }
 }
 
-void UStoryBoardSubsystem::SetupActorVisibilities(const TArray<FActorVisibility>& ActorVisibilities) {
-    for (const FActorVisibility& ActorVisibility : ActorVisibilities) {
-        if (AActor* actor = ActorVisibility.Actor.Get()) {
-            actor->SetActorHiddenInGame(ActorVisibility.bHiddenInGame);
-            UE_LOG(LogStoryBoard, Log, TEXT("[%s] from %d to %d"), *actor->GetName(), ActorVisibility.bHiddenInGame, actor->IsHidden());
+void UStoryBoardSubsystem::SetupActorVisibilities(const TArray<FActorVisibility>& ActorVisibilities, EExecuteFlag ExecuteFlag) {
+    for (const FActorVisibility& actorVisibility : ActorVisibilities) {
+        AActor* actor = actorVisibility.Actor.Get();
+
+        if (((uint8)ExecuteFlag & (uint8)actorVisibility.ExecuteFlag) == 0 || actor == nullptr) {
+            continue;
         }
+
+        actor->SetActorHiddenInGame(actorVisibility.bHiddenInGame);
     }
 }
 
@@ -114,7 +117,7 @@ void UStoryBoardSubsystem::SetupWeather(const FWeatherStatus& WeatherStatus) {
     }
 }
 
-void UStoryBoardSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses) {
+void UStoryBoardSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuses, EExecuteFlag ExecuteFlag) {
     UDataLayerManager* dataLayerManager = GetWorld()->GetDataLayerManager();
     if (dataLayerManager == nullptr) {
         UE_LOG(LogStoryBoard, Warning, TEXT("Current world does not have a DataLayerManager!"));
@@ -123,6 +126,12 @@ void UStoryBoardSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& 
 
     for (const FDataLayerStatus& dataLayerStatus : DataLayerStatuses) {
         const UDataLayerInstance* inst = dataLayerManager->GetDataLayerInstanceFromAsset(dataLayerStatus.DataLayerAsset.Get());
+
+        if (((uint8)ExecuteFlag & (uint8)dataLayerStatus.ExecuteFlag) == 0 || inst == nullptr) {
+            continue;
+        }
+
+        dataLayerManager->SetDataLayerInstanceRuntimeState(inst, dataLayerStatus.RuntimeState, false);
     }
 }
 

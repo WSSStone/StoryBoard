@@ -6,9 +6,21 @@
 
 #include "StoryScenario.generated.h"
 
+UENUM(BlueprintType)
+enum class EExecuteFlag : uint8 {
+    NONE = 0u UMETA(Hidden),
+    GAME_TICK = 1u,
+    GAME_BEGIN = (1u << 2) - 1,
+    EDITOR = (1u << 3) - 1,
+    MAX = (1u << 4) - 1 UMETA(Hidden),
+};
+
 USTRUCT(BlueprintType)
 struct FDataLayerStatus {
     GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere)
+    EExecuteFlag ExecuteFlag;
 
     // Get current level's DataLayerInstance corresponding to this DataLayerAsset.
     UPROPERTY(EditAnywhere)
@@ -17,10 +29,6 @@ struct FDataLayerStatus {
     // Runtime State
     UPROPERTY(EditAnywhere)
     EDataLayerRuntimeState RuntimeState;
-
-    // Runtime visibility
-    UPROPERTY(EditAnywhere)
-    bool bVisible;
 
 #if WITH_EDITORONLY_DATA
     // Editor State
@@ -33,9 +41,9 @@ struct FDataLayerStatus {
 #endif
 
     FDataLayerStatus() :
+        ExecuteFlag(EExecuteFlag::GAME_BEGIN),
         DataLayerAsset(nullptr),
-        RuntimeState(EDataLayerRuntimeState::Unloaded),
-        bVisible(false)
+        RuntimeState(EDataLayerRuntimeState::Unloaded)
 #if WITH_EDITORONLY_DATA
         , bLoaded(false),
         bEditorVisible(false)
@@ -44,7 +52,7 @@ struct FDataLayerStatus {
     }
 
     friend FArchive& operator<<(FArchive& Ar, FDataLayerStatus& Inp) {
-        Ar << Inp.DataLayerAsset << Inp.RuntimeState << Inp.bVisible;
+        Ar << Inp.ExecuteFlag << Inp.DataLayerAsset << Inp.RuntimeState;
 #if WITH_EDITORONLY_DATA
         Ar << Inp.bLoaded << Inp.bEditorVisible;
 #endif
@@ -57,27 +65,24 @@ struct FActorVisibility {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere)
+    EExecuteFlag ExecuteFlag;
+
+    UPROPERTY(EditAnywhere)
     TSoftObjectPtr<AActor> Actor;
 
     UPROPERTY(EditAnywhere)
     bool bHiddenInGame;
 
     FActorVisibility() :
+        ExecuteFlag(EExecuteFlag::GAME_TICK),
         Actor(nullptr),
         bHiddenInGame(false) {
     }
 
     friend FArchive& operator<<(FArchive& Ar, FActorVisibility& Inp) {
-        Ar << Inp.Actor << Inp.bHiddenInGame;
+        Ar << Inp.ExecuteFlag << Inp.Actor << Inp.bHiddenInGame;
         return Ar;
     }
-};
-
-UENUM(BlueprintType)
-enum class EConsoleCommandPrority : uint8 {
-    Global = 0, // Only exec once on begin
-    Local = 1,  // Exec whenever needed
-    MAX = 2 UMETA(Hidden)
 };
 
 USTRUCT(BlueprintType)
@@ -85,18 +90,18 @@ struct FStatusCommand {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere)
-    EConsoleCommandPrority Priority;
+    EExecuteFlag ExecuteFlag;
 
     UPROPERTY(EditAnywhere)
     FString Command;
 
     FStatusCommand() :
-        Priority(EConsoleCommandPrority::Local),
+        ExecuteFlag(EExecuteFlag::GAME_BEGIN),
         Command(TEXT("")) {
     }
 
     friend FArchive& operator<<(FArchive& Ar, FStatusCommand& Inp) {
-        Ar << Inp.Priority << Inp.Command;
+        Ar << Inp.ExecuteFlag << Inp.Command;
         return Ar;
     }
 };

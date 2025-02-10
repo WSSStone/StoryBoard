@@ -22,7 +22,7 @@ public:
     virtual void Deinitialize() override;
 
     UFUNCTION(BlueprintCallable)
-    void SetupScene(UStoryScenario* SceneSetting);
+    void SetupScene(UStoryScenario* SceneSetting, EExecuteFlag ExecuteFlag);
 
     UFUNCTION(BlueprintCallable)
     void SetDefaultScenario(UStoryScenario* in);
@@ -36,13 +36,13 @@ public:
     UPROPERTY(BlueprintAssignable)
     FWeatherStatusDelegate OnWeatherStatusChanged;
 
-    void ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands);
+    void ExecuteCommands(const TArray<FStatusCommand>& ConsoleCommands, EExecuteFlag ExecuteFlag);
 
-    void SetupActorVisibilities(const TArray<FActorVisibility>& ActorVisibilities);
+    void SetupActorVisibilities(const TArray<FActorVisibility>& ActorVisibilities, EExecuteFlag ExecuteFlag);
+
+    void SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuseUEditorSubsystems, EExecuteFlag ExecuteFlag);
 
     void SetupWeather(const FWeatherStatus& WeatherStatus);
-
-    void SetupDataLayerStatus(const TArray<FDataLayerStatus>& DataLayerStatuseUEditorSubsystems);
 
     bool TryLoadDefaultScenario(const FString& WorldName);
 
