@@ -1,24 +1,46 @@
 #pragma once
 
-#include "Definitions.h"
+#include "StoryBoardSceneViewExtension.h"
+
+#include "DelegatesDefinitions.h"
 #include "CoreMinimal.h"
-#include "EditorSubsystem.h"
+
 #include "StoryBoardSceneViewExtensionSubsystem.generated.h"
 
-class FStoryBoardSceneViewExtension;
+#if WITH_EDITOR
+class FStoryBoardSceneViewExtensionEditorUndoClient : public FEditorUndoClient {
+};
+#else
+class FStoryBoardSceneViewExtensionEditorUndoClient {
+};
+#endif
 
 UCLASS()
-class STORYBOARDSCENEVIEWEXTENSION_API UStoryBoardSceneViewExtensionSubsystem : public UEditorSubsystem
-{
+class STORYBOARDSCENEVIEWEXTENSION_API UStoryBoardSceneViewExtensionSubsystem : public UWorldSubsystem, public FStoryBoardSceneViewExtensionEditorUndoClient {
     GENERATED_BODY()
 public:
     void Initialize(FSubsystemCollectionBase& Collection) override;
+
     void Deinitialize() override;
 
-    void OnActivateSceneViewExtension();
-    void OnDeactivateSceneViewExtension();
+#if WITH_EDITOR
+    virtual void PostUndo(bool bSuccess) override {};
 
-    void HandleStoryNodeWrapper(FStoryNodeWrapper* Wrapper);
+    virtual void PostRedo(bool bSuccess) override {}
+#endif
 
-    FStoryBoardSceneViewExtension* SceneViewExtension;
+    void OnActivate(FStoryNodeWrapperDelegate& Delegate);
+    
+    void OnDeactivate(FStoryNodeWrapperDelegate& Delegate);
+
+    void HandleStoryNodeWrapperHint(FStoryNodeWrapper* Wrapper);
+
+private:
+    bool bRender {false};
+
+    FStoryNodeWrapper* HintWrapper;
+
+    TSharedPtr<class FStoryBoardSceneViewExtension, ESPMode::ThreadSafe> StoryBoardSceneViewExtension;
+
+    friend class FStoryBoardSceneViewExtension;
 };

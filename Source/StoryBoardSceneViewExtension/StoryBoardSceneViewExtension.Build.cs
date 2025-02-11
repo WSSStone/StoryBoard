@@ -14,7 +14,6 @@ public class StoryBoardSceneViewExtension : ModuleRules
                 "Engine",
                 "RHI",
                 "RenderCore",
-                "UnrealEd",
                 "StoryBoardRuntime"
             }
         );
@@ -22,7 +21,8 @@ public class StoryBoardSceneViewExtension : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-                "InputCore",
+				"UnrealEd",
+				"InputCore",
                 "EnhancedInput",
 			}
         );

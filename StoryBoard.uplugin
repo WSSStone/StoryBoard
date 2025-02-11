@@ -15,7 +15,7 @@
       },
       {
         "Name": "StoryBoardSceneViewExtension",
-        "Type": "Editor",
+        "Type": "Runtime",
         "LoadingPhase": "Default"
       },
       {
