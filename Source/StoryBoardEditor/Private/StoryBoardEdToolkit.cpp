@@ -35,7 +35,7 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
     GetToolkitHost()->AddViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
 }
 
-void FStoryBoardEdToolkit::OnNodeSelectedRedraw(AStoryNode* node) {
+void FStoryBoardEdToolkit::OnNodeSelectedRedraw(FStoryNodeWrapper* Wrapper) {
     if (IsHosted() && ViewportOverlayWidget.IsValid()) {
         GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
     }

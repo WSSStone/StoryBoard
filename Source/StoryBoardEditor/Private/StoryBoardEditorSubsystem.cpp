@@ -148,13 +148,21 @@ void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) 
 }
 
 void UStoryBoardEditorSubsystem::HandleNodeScenarioChange(AStoryNode* Node) {
-    EdNodeSelectedEvent.Broadcast(Node);
+    FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
+    if (EdNodeSelectedEvent.IsBound()) {
+        EdNodeSelectedEvent.Broadcast(wrapper);
+    }
+
     SetupScenario(Node->Scenario.Get());
 }
 
 void UStoryBoardEditorSubsystem::HandleNodeNextPointsChange(AStoryNode* Node) {
     StoryNodeHelper->ReallocateStoryNodes(GEditor->GetEditorWorldContext().World());
-    EdNodeSelectedEvent.Broadcast(Node);
+    
+    FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
+    if (EdNodeSelectedEvent.IsBound()) {
+        EdNodeSelectedEvent.Broadcast(wrapper);
+    }
 }
 
 void UStoryBoardEditorSubsystem::OnEnterEdMode() {

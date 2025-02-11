@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StoryNode.h"
+#include "StoryBoardSubsystem.h"
 
 #include "Toolkits/ToolkitManager.h"
 #include "EditorModeManager.h"
@@ -15,7 +15,7 @@ public:
     virtual FText GetBaseToolkitName() const override;
     virtual class FEdMode* GetEditorMode() const override;
 
-    void OnNodeSelectedRedraw(AStoryNode* node);
+    void OnNodeSelectedRedraw(FStoryNodeWrapper* Wrapper);
 
 protected:
     bool bUsesToolkitBuilder { false };

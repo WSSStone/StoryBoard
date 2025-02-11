@@ -3,6 +3,7 @@
 #include "StoryBoardEditorSettings.h"
 #include "StoryNode.h"
 #include "StoryBoardSubsystem.h"
+#include "DelegatesDefinitions.h"
 
 #include "CoreMinimal.h"
 #include "LevelEditor.h"
@@ -16,7 +17,7 @@ class FStoryNodeEditorHelper;
 class FStoryAssetHelper;
 class FStoryBoardViewportDrawer;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, AStoryNode*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, FStoryNodeWrapper*)
 
 UCLASS()
 class STORYBOARDEDITOR_API UStoryBoardEditorSubsystem : public UEditorSubsystem, public FEditorUndoClient {
@@ -27,6 +28,10 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
     virtual void Deinitialize() override;
+
+    virtual void PostUndo(bool bSuccess) override {};
+
+    virtual void PostRedo(bool bSuccess) override {}
 
     virtual UWorld* GetWorld() const override;
 
