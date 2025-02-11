@@ -17,6 +17,8 @@ public class StoryBoardEditor : ModuleRules
 				"RHI",
 				"AssetRegistry",
                 "EditorFramework",
+                "StoryBoardRuntime",
+                "StoryBoardSceneViewExtension"
             }
         );
 
@@ -39,15 +41,8 @@ public class StoryBoardEditor : ModuleRules
                 "EditorSubsystem",
                 "LevelEditor",
 				"DataLayerEditor",
-				"StoryBoardRuntime",
+                "EnhancedInput",
 			}
-        );
-
-        DynamicallyLoadedModuleNames.AddRange(
-            new string[]
-            {
-                // Add any modules that your module loads dynamically here
-            }
         );
 	}
 }

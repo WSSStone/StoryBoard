@@ -14,6 +14,11 @@
         "LoadingPhase": "Default"
       },
       {
+        "Name": "StoryBoardSceneViewExtension",
+        "Type": "Editor",
+        "LoadingPhase": "Default"
+      },
+      {
         "Name": "StoryBoardEditor",
         "Type": "Editor",
         "LoadingPhase": "Default"
