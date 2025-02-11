@@ -19,7 +19,7 @@ void UStoryBoardSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 
     // fall back to default scenario
     GConfig->GetString(
-        TEXT("/Script/CodeFlee.StoryBoardSubsystem"),
+        *DefaultScenarioSectionName,
         *FString::Printf(TEXT("%s"), *world->GetMapName()),
         DefaultScenarioPath,
         GGameIni
@@ -72,7 +72,7 @@ void UStoryBoardSubsystem::SetDefaultScenario(UStoryScenario* in) {
     DefaultScenario = in;
     DefaultScenarioPath = DefaultScenario->GetPathName();
     GConfig->SetString(
-        TEXT("/Script/CodeFlee.StoryBoardSubsystem"),
+        *DefaultScenarioSectionName,
         *FString::Printf(TEXT("%s"), *GetWorld()->GetMapName()),
         *DefaultScenarioPath,
         GGameIni

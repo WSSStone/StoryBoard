@@ -52,6 +52,8 @@ public:
 
 private:
     FString DefaultScenarioPath;
+
+    const FString DefaultScenarioSectionName {"/Script/CodeFlee.StoryBoard"};
 };
 
 /*
