@@ -19,7 +19,7 @@ class FStoryBoardViewportDrawer;
 DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, AStoryNode*)
 
 UCLASS()
-class STORYBOARDEDITOR_API UStoryBoardEditorSubsystem : public UEditorSubsystem {
+class STORYBOARDEDITOR_API UStoryBoardEditorSubsystem : public UEditorSubsystem, public FEditorUndoClient {
     GENERATED_BODY()
 public:
     static FNodeSelectedEvent EdNodeSelectedEvent;

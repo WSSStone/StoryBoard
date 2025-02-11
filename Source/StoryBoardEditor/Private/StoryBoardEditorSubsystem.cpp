@@ -2,6 +2,7 @@
 
 #include "StoryBoardEditorSubsystem.h"
 #include "StoryBoardEdMode.h"
+#include "StoryBoardCommands.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -29,6 +30,9 @@ FNodeSelectedEvent UStoryBoardEditorSubsystem::EdNodeSelectedEvent;
 void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
 
+    FStoryBoardCommands::Register();
+
+    GEditor->RegisterForUndo(this);
     FEditorDelegates::BeginPIE.AddUObject(this, &UStoryBoardEditorSubsystem::HandleEditorBeginPIE);
     FEditorDelegates::OnMapOpened.AddUObject(this, &UStoryBoardEditorSubsystem::HandleOnMapOpened);
     FWorldDelegates::OnCurrentLevelChanged.AddUObject(this, &UStoryBoardEditorSubsystem::OnCurrentLevelChanged);
@@ -49,6 +53,9 @@ void UStoryBoardEditorSubsystem::Deinitialize() {
     FEditorDelegates::ChangeEditorMode.RemoveAll(this);
     FEditorDelegates::OnMapOpened.RemoveAll(this);
     FEditorDelegates::BeginPIE.RemoveAll(this);
+    GEditor->UnregisterForUndo(this);
+
+    FStoryBoardCommands::Unregister();
 
     Super::Deinitialize();
 }

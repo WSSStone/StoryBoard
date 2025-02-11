@@ -15,8 +15,6 @@ void FStoryBoardEditorModule::StartupModule() {
 
     // EditorMode is registered with LevelEditor's EdMode allocation
 
-    FStoryBoardCommands::Register();
-
     FStoryScenarioAssetActions::RegisterAssetTypeActions();
 
     UStoryBoardEditorSettings* Settings = GetMutableDefault<UStoryBoardEditorSettings>();
@@ -42,8 +40,6 @@ void FStoryBoardEditorModule::ShutdownModule() {
     }
 
     FStoryScenarioAssetActions::UnregisterAssetTypeActions();
-
-    FStoryBoardCommands::Unregister();
 
     FEditorModeRegistry::Get().UnregisterMode(FName(TEXT("StoryBoardEditMode")));
 
