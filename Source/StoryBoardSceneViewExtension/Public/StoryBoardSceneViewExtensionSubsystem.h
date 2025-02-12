@@ -23,15 +23,17 @@ public:
 
     void Deinitialize() override;
 
+    void DisableSVE();
+
 #if WITH_EDITOR
     virtual void PostUndo(bool bSuccess) override {};
 
     virtual void PostRedo(bool bSuccess) override {}
 #endif
 
-    void OnActivate(FStoryNodeWrapperDelegate& Delegate);
+    void BindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate);
     
-    void OnDeactivate(FStoryNodeWrapperDelegate& Delegate);
+    void UnbindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate);
 
     void HandleStoryNodeWrapperHint(FStoryNodeWrapper* Wrapper);
 

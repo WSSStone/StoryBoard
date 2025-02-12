@@ -14,6 +14,7 @@ public class StoryBoardSceneViewExtension : ModuleRules
                 "Engine",
                 "RHI",
                 "RenderCore",
+                "Renderer",
                 "StoryBoardRuntime"
             }
         );
@@ -24,6 +25,7 @@ public class StoryBoardSceneViewExtension : ModuleRules
 				"UnrealEd",
 				"InputCore",
                 "EnhancedInput",
+				"Projects"
 			}
         );
 	}

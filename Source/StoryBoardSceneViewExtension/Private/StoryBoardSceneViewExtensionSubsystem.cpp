@@ -10,6 +10,12 @@ void UStoryBoardSceneViewExtensionSubsystem::Initialize(FSubsystemCollectionBase
 }
 
 void UStoryBoardSceneViewExtensionSubsystem::Deinitialize() {
+	DisableSVE();
+
+    Super::Deinitialize();
+}
+
+void UStoryBoardSceneViewExtensionSubsystem::DisableSVE() {
 	{
 		StoryBoardSceneViewExtension->IsActiveThisFrameFunctions.Empty();
 
@@ -22,7 +28,7 @@ void UStoryBoardSceneViewExtensionSubsystem::Deinitialize() {
 		StoryBoardSceneViewExtension->IsActiveThisFrameFunctions.Add(IsActiveFunctor);
 	}
 
-    // release scene view extension in render thread
+	// release scene view extension in render thread
 	ENQUEUE_RENDER_COMMAND(ReleaseSVE)([this](FRHICommandListImmediate& RHICmdList) {
 		// Prevent this SVE from being gathered, in case it is kept alive by a strong reference somewhere else.
 		{
@@ -43,15 +49,13 @@ void UStoryBoardSceneViewExtensionSubsystem::Deinitialize() {
 		});
 
 	FlushRenderingCommands();
-
-    Super::Deinitialize();
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::OnActivate(FStoryNodeWrapperDelegate& Delegate) {
+void UStoryBoardSceneViewExtensionSubsystem::BindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
     Delegate.AddUObject(this, &UStoryBoardSceneViewExtensionSubsystem::HandleStoryNodeWrapperHint);
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::OnDeactivate(FStoryNodeWrapperDelegate& Delegate) {
+void UStoryBoardSceneViewExtensionSubsystem::UnbindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
     Delegate.RemoveAll(this);
 }
 
