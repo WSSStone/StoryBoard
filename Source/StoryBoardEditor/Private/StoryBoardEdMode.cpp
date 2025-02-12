@@ -24,14 +24,13 @@ UStoryBoardEdMode::~UStoryBoardEdMode() {}
 void UStoryBoardEdMode::Enter() {
     UEdMode::Enter();
 
-    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-    edSubsys->EdNodeSelectedEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
+    UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
 }
 
 void UStoryBoardEdMode::Exit() {
-    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+    UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent.RemoveAll(Toolkit.Get());
 
-    edSubsys->EdNodeSelectedEvent.RemoveAll(Toolkit.Get());
+    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     edSubsys->OnExitEdMode();
 
     UEdMode::Exit();

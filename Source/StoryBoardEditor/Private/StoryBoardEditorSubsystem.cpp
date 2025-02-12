@@ -270,7 +270,8 @@ void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
     }
 
     if (EdSetCurrentNodeEvent.IsBound()) {
-        EdSetCurrentNodeEvent.Broadcast(Node);
+        FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
+        EdSetCurrentNodeEvent.Broadcast(wrapper);
     }
 }
 
