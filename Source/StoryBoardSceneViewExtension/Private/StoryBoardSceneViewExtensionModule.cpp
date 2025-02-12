@@ -1,4 +1,4 @@
-#include "StoryBoardSVExtensionModule.h"
+#include "StoryBoardSceneViewExtensionModule.h"
 
 
 void FStoryBoardSVExtensionModule::StartupModule()

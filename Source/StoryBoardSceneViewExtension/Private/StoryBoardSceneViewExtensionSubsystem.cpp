@@ -48,7 +48,7 @@ void UStoryBoardSceneViewExtensionSubsystem::Deinitialize() {
 }
 
 void UStoryBoardSceneViewExtensionSubsystem::OnActivate(FStoryNodeWrapperDelegate& Delegate) {
-    Delegate.AddUObject(this, &HandleStoryNodeWrapperHint);
+    Delegate.AddUObject(this, &UStoryBoardSceneViewExtensionSubsystem::HandleStoryNodeWrapperHint);
 }
 
 void UStoryBoardSceneViewExtensionSubsystem::OnDeactivate(FStoryNodeWrapperDelegate& Delegate) {

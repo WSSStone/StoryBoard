@@ -12,6 +12,17 @@
 #include "SceneView.h"
 #include "ScreenPass.h"
 
+namespace {
+    void DrawThumbnailImage(UStoryScenario* Scenario, UWorld* World) {
+        if (!Scenario || !World) {
+            return;
+        }
+        
+        // draw thumbnail image
+
+    }
+}
+
 FStoryBoardSceneViewExtension::FStoryBoardSceneViewExtension(
     const FAutoRegister& AutoRegister,
     UStoryBoardSceneViewExtensionSubsystem* InSubsystem)
