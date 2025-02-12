@@ -33,9 +33,13 @@ private:
         S256 = 256
     };
 
+    TSharedPtr<SWidget> CreateFirstBtn();
+
     TSharedPtr<SWidget> CreatePrevBtn();
     
     TSharedPtr<SWidget> CreateNextBtn();
+
+    TSharedPtr<SWidget> CreateLastBtn();
     
     TSharedPtr<SWidget> CreateCurrnetNodeView();
     

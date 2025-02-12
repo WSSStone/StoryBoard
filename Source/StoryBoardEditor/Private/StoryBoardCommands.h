@@ -30,7 +30,7 @@ public:
         UI_COMMAND
         (
             StoryModeEntry,
-            "StoryBoardMode", // Label
+            "Activate Story Board Mode", // Label
             "Enter Story Board Mode", // Tooltip
             EUserInterfaceActionType::Button, // UI representation (when used to dynamically build toolbars and menus)
             FInputChord(EKeys::Zero, EModifierKey::Shift) // keyboard shortcut (can be empty)

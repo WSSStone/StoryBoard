@@ -191,13 +191,13 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
 
     auto world = GEditor->GetEditorWorldContext().World();
     auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
-    sveSubsys->OnActivate(EdSetHindNodeEvent);
+    sveSubsys->BindIndicatorDelegate(EdSetHindNodeEvent);
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
     auto world = GEditor->GetEditorWorldContext().World();
     auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
-    sveSubsys->OnDeactivate(EdSetHindNodeEvent);
+    sveSubsys->UnbindIndicatorDelegate(EdSetHindNodeEvent);
 
     RemoveStoryBoardViewportDrawer();
     RemoveStoryNodeHelper();
@@ -228,6 +228,13 @@ auto FocusActor = [](AActor* actor) {
     GEditor->NoteSelectionChange();
 };
 
+FReply UStoryBoardEditorSubsystem::FirstNode() {
+    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr)->Node);
+    FocusActor(StoryNodeHelper->SelectedNode.Get());
+
+    return FReply::Handled();
+}
+
 FReply UStoryBoardEditorSubsystem::PreviousNode() {
     // Point Current to Previous
     TArray<TObjectPtr<AStoryNode>> arr;
@@ -248,6 +255,13 @@ FReply UStoryBoardEditorSubsystem::NextNode() {
         SetCurrentNode(arr[0].Get());
         FocusActor(StoryNodeHelper->SelectedNode.Get());
     }
+
+    return FReply::Handled();
+}
+
+FReply UStoryBoardEditorSubsystem::LastNode() {
+    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr, false)->Node);
+    FocusActor(StoryNodeHelper->SelectedNode.Get());
 
     return FReply::Handled();
 }
@@ -610,6 +624,32 @@ UStoryScenario* FStoryNodeEditorHelper::BFSNearestPrevScenario() {
         return FStoryNodeHelper::BFSNearestPrevScenario(SelectedNode.Get());
     }
     return nullptr;
+}
+
+FStoryNodeWrapper* FStoryNodeEditorHelper::BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bFwd) {
+    FStoryNodeWrapper* ret = nullptr;
+
+    if (Wrapper == nullptr) {
+        Wrapper = StoryNodeWrappers.Find(SelectedNode.Get());
+    }
+    
+    TArray<FStoryNodeWrapper*> queue {Wrapper};
+    TSet<FStoryNodeWrapper*> history;
+    while (!queue.IsEmpty()) {
+        ret = queue[0];
+        queue.RemoveAt(0);
+        history.Add(ret);
+
+        TArray<FStoryNodeWrapper*>* arrayPtr = bFwd ? &ret->PrevNodes : &ret->NextNodes;
+        for (auto wrapper : *arrayPtr) {
+            if (history.Contains(wrapper)) {
+                continue;
+            }
+            queue.Add(wrapper);
+        }
+    }
+
+    return ret;
 }
 
 void FStoryNodeEditorHelper::GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret) {

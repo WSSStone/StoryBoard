@@ -82,8 +82,10 @@ public:
     // exit StoryBoardEdMode
     void ExitEdMode();
 
+    FReply FirstNode();
     FReply PreviousNode();
     FReply NextNode();
+    FReply LastNode();
     FReply UISelectNode(AStoryNode* Node);
 
     void SetCurrentNode(AStoryNode* Node);
@@ -153,6 +155,8 @@ public:
     void OnStoryNodeAddedOrRemoved();
 
     virtual UStoryScenario* BFSNearestPrevScenario() override;
+
+    FStoryNodeWrapper* BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bFwd = true);
 
     void GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret);
 

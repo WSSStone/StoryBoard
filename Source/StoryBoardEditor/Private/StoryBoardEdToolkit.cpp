@@ -51,8 +51,10 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
     auto currentView = CreateCurrnetNodeView();
     auto nextListView = CreateNextNodesView();
     auto prevListView = CreatePrevNodesView();
+    auto firstBtn = CreateFirstBtn();
     auto nextBtn = CreateNextBtn();
     auto prevBtn = CreatePrevBtn();
+    auto lastBtn = CreateLastBtn();
 
     SAssignNew(ViewportOverlayWidget, SHorizontalBox)
         + SHorizontalBox::Slot()
@@ -71,6 +73,14 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                 .Padding(0.0)
                 [
                     SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
+                    .HAlign(HAlign_Right)
+                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+                    [
+                        firstBtn.ToSharedRef()
+                    ]
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
@@ -119,6 +129,14 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                     .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                     [
                         nextBtn.ToSharedRef()
+                    ]
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
+                    .HAlign(HAlign_Right)
+                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+                    [
+                        lastBtn.ToSharedRef()
                     ]
                 ]
             ]
@@ -183,6 +201,20 @@ void FStoryBoardEdToolkit::RequestModeUITabs() {
     // do not draw default side bar
 }
 
+TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateFirstBtn() {
+    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+    auto widget = SNew(SButton)
+        .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
+        .TextStyle(FAppStyle::Get(), "DialogButtonText")
+        .Text(LOCTEXT("First Node", "<<"))
+        .ToolTipText(LOCTEXT("FirstNodeTooltip", "Select First Node"))
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Center)
+        .DesiredSizeScale(FVector2D(1.0f, 1.0f))
+        .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::FirstNode);
+    return widget;
+}
+
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevBtn() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     auto widget = SNew(SButton)
@@ -196,6 +228,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevBtn() {
         .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::PreviousNode);
      return widget;
 }
+
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     auto widget = SNew(SButton)
@@ -208,6 +241,20 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
         .DesiredSizeScale(FVector2D(1.0f, 1.0f))
         .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::NextNode);
 
+    return widget;
+}
+
+TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateLastBtn() {
+    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+    auto widget = SNew(SButton)
+        .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
+        .TextStyle(FAppStyle::Get(), "DialogButtonText")
+        .Text(LOCTEXT("Last Node", ">>"))
+        .ToolTipText(LOCTEXT("LastNodeTooltip", "Select Last Node"))
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Center)
+        .DesiredSizeScale(FVector2D(1.0f, 1.0f))
+        .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::LastNode);
     return widget;
 }
 
