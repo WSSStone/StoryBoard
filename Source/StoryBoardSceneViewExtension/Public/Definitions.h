@@ -1,7 +1,0 @@
-#include "CoreMinimal.h"
-#include "StoryBoardSubsystem.h"
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FStoryNodeDelegate, AStoryNode*)
-DECLARE_MULTICAST_DELEGATE_OneParam(FStoryScenarioDelegate, UStoryScenario*)
-DECLARE_MULTICAST_DELEGATE_OneParam(FStoryNodeWrapperDelegate, FStoryNodeWrapper*)
-DECLARE_MULTICAST_DELEGATE_OneParam(FStoryNodeHelperDelegate, FStoryNodeHelper*)
