@@ -28,7 +28,12 @@ void FStoryBoardSceneViewExtension::PrePostProcessPass_RenderThread(
 		return;
 	}
 
-	
+    // draw sth else
+
+    // draw hint node
+    // draw thumbnail image from WorldSubsystem->HintWrapper->Node->Scenario
+    
+
 }
 
 void FStoryBoardSceneViewExtension::Invalidate() {

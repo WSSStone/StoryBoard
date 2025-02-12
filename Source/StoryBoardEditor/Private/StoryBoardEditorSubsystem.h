@@ -17,13 +17,15 @@ class FStoryNodeEditorHelper;
 class FStoryAssetHelper;
 class FStoryBoardViewportDrawer;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FNodeSelectedEvent, FStoryNodeWrapper*)
+using FNodeSelectedEvent = FStoryNodeWrapperDelegate;
+using FSetHintNodeEvent = FStoryNodeWrapperDelegate;
 
 UCLASS()
 class STORYBOARDEDITOR_API UStoryBoardEditorSubsystem : public UEditorSubsystem, public FEditorUndoClient {
     GENERATED_BODY()
 public:
-    static FNodeSelectedEvent EdNodeSelectedEvent;
+    static FNodeSelectedEvent EdSetCurrentNodeEvent;
+    static FSetHintNodeEvent EdSetHindNodeEvent;
 
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 

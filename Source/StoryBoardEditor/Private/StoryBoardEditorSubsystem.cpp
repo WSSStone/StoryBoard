@@ -4,6 +4,8 @@
 #include "StoryBoardEdMode.h"
 #include "StoryBoardCommands.h"
 
+#include "StoryBoardSceneViewExtensionSubsystem.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "EditorModeManager.h"
@@ -25,7 +27,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogStoryBoardEditor, Log, All);
 
-FNodeSelectedEvent UStoryBoardEditorSubsystem::EdNodeSelectedEvent;
+FNodeSelectedEvent UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent;
+FSetHintNodeEvent UStoryBoardEditorSubsystem::EdSetHindNodeEvent;
 
 void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
@@ -116,10 +119,15 @@ void UStoryBoardEditorSubsystem::RemoveStoryBoardViewportDrawer() {
 
 void UStoryBoardEditorSubsystem::SetHintNode(AStoryNode* Node) {
     StoryBoardViewportDrawer->HintNode = Node;
+    
+    FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
+    EdSetHindNodeEvent.Broadcast(wrapper);
 }
 
 void UStoryBoardEditorSubsystem::RemoveHintNode() {
     StoryBoardViewportDrawer->HintNode = nullptr;
+
+    EdSetHindNodeEvent.Broadcast(nullptr);
 }
 
 
@@ -149,8 +157,8 @@ void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) 
 
 void UStoryBoardEditorSubsystem::HandleNodeScenarioChange(AStoryNode* Node) {
     FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
-    if (EdNodeSelectedEvent.IsBound()) {
-        EdNodeSelectedEvent.Broadcast(wrapper);
+    if (EdSetCurrentNodeEvent.IsBound()) {
+        EdSetCurrentNodeEvent.Broadcast(wrapper);
     }
 
     SetupScenario(Node->Scenario.Get());
@@ -160,8 +168,8 @@ void UStoryBoardEditorSubsystem::HandleNodeNextPointsChange(AStoryNode* Node) {
     StoryNodeHelper->ReallocateStoryNodes(GEditor->GetEditorWorldContext().World());
     
     FStoryNodeWrapper* wrapper = StoryNodeHelper->StoryNodeWrappers.Find(Node);
-    if (EdNodeSelectedEvent.IsBound()) {
-        EdNodeSelectedEvent.Broadcast(wrapper);
+    if (EdSetCurrentNodeEvent.IsBound()) {
+        EdSetCurrentNodeEvent.Broadcast(wrapper);
     }
 }
 
@@ -180,9 +188,17 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
 
     AActor* actor = UGameplayStatics::GetActorOfClass(GEditor->GetEditorWorldContext().World(), AStoryNode::StaticClass());
     StoryNodeHelper->SelectedNode = Cast<AStoryNode>(actor);
+
+    auto world = GEditor->GetEditorWorldContext().World();
+    auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
+    sveSubsys->OnActivate(EdSetHindNodeEvent);
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
+    auto world = GEditor->GetEditorWorldContext().World();
+    auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
+    sveSubsys->OnDeactivate(EdSetHindNodeEvent);
+
     RemoveStoryBoardViewportDrawer();
     RemoveStoryNodeHelper();
     isEdMode = false;
@@ -253,8 +269,8 @@ void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
         SetCurrentScenario(Node->Scenario.Get());
     }
 
-    if (EdNodeSelectedEvent.IsBound()) {
-        EdNodeSelectedEvent.Broadcast(Node);
+    if (EdSetCurrentNodeEvent.IsBound()) {
+        EdSetCurrentNodeEvent.Broadcast(Node);
     }
 }
 
