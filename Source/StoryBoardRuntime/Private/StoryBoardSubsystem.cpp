@@ -228,12 +228,14 @@ UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario(AStoryNode* Node) {
         return nullptr;
     }
 
-    TArray<FStoryNodeWrapper*> queue {wrapper};
+    TQueue<FStoryNodeWrapper*> queue;
+    queue.Enqueue(wrapper);
     TArray<FStoryNodeWrapper*> history;
 
     while (!queue.IsEmpty()) {
-        FStoryNodeWrapper* curr = queue[0];
-        queue.RemoveAt(0);
+        FStoryNodeWrapper* curr;
+        queue.Peek(curr);
+        queue.Pop();
         history.Add(curr);
         if (curr->Node == nullptr) {
             continue;
@@ -245,7 +247,7 @@ UStoryScenario* FStoryNodeHelper::BFSNearestPrevScenario(AStoryNode* Node) {
             if (history.Contains(prev)) {
                 continue;
             }
-            queue.Add(prev);
+            queue.Enqueue(prev);
         }
     }
     return nullptr;
