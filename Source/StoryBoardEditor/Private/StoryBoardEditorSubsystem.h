@@ -84,11 +84,12 @@ public:
 
     FReply FirstNode();
     FReply PreviousNode();
+    FReply CurrentNode();
     FReply NextNode();
     FReply LastNode();
-    FReply UISelectNode(AStoryNode* Node);
+    FReply UISelectNode(AStoryNode* Node, bool bApplyScenario = true);
 
-    void SetCurrentNode(AStoryNode* Node);
+    void SetCurrentNode(AStoryNode* Node, bool bApplyScenario = true);
     void SetCurrentScenario(UStoryScenario* Scenario);
 
     void HandleNodeScenarioChange(AStoryNode* Node);
@@ -156,7 +157,7 @@ public:
 
     virtual UStoryScenario* BFSNearestPrevScenario() override;
 
-    FStoryNodeWrapper* BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bFwd = true);
+    FStoryNodeWrapper* BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bPrev = true);
 
     void GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret);
 

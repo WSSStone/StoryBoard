@@ -54,8 +54,9 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
     auto nextListView = CreateNextNodesView();
     auto prevListView = CreatePrevNodesView();
     auto firstBtn     = CreateFirstBtn();
-    auto nextBtn      = CreateNextBtn();
     auto prevBtn      = CreatePrevBtn();
+    auto currBtn      = CreateCurrBtn();
+    auto nextBtn      = CreateNextBtn();
     auto lastBtn      = CreateLastBtn();
 
     SAssignNew(ViewportOverlayWidget, SHorizontalBox)
@@ -68,43 +69,29 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
         + SVerticalBox::Slot()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .MaxHeight(155.0)
+        .AutoHeight()
         [
             SNew(SBorder)
             .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
             .Padding(0.0)
             [
-                SNew(SHorizontalBox)
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(VAlign_Center)
-                .HAlign(HAlign_Right)
-                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                [
-                    firstBtn.ToSharedRef()
-                ]
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(VAlign_Center)
-                .HAlign(HAlign_Right)
-                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                [
-                    prevBtn.ToSharedRef()
-                ]
-                + SHorizontalBox::Slot()
-                .AutoWidth()
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+#pragma region Scenario Icon View
                 .HAlign(HAlign_Center)
-                .VAlign(VAlign_Center)
+                .VAlign(VAlign_Bottom)
+                .MaxHeight(159.0)
                 [
                     SNew(SBorder)
                     .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                    .Padding(FMargin(2.0, 0.0, 2.0, 0.0))
+                    .Padding(2.f)
                     [
                         SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
                         .AutoWidth()
                         .HAlign(HAlign_Center)
                         .VAlign(VAlign_Center)
+                        .Padding(FMargin(2.0, 0.0, 2.0, 0.0))
                         [
                             prevListView.ToSharedRef()
                         ]
@@ -124,28 +111,68 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                         ]
                     ]
                 ]
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(VAlign_Center)
-                .HAlign(HAlign_Left)
-                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+#pragma endregion
+                + SVerticalBox::Slot()
+#pragma region Node Selection Action
+                .HAlign(HAlign_Center)
+                .VAlign(VAlign_Top)
+                .AutoHeight()
                 [
-                    nextBtn.ToSharedRef()
+                    SNew(SBorder)
+                    .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
+                    .Padding(2.f)
+                    [
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        .HAlign(HAlign_Center)
+                        .Padding(2.0)
+                        [
+                            firstBtn.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        .HAlign(HAlign_Center)
+                        .Padding(2.0)
+                        [
+                            prevBtn.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        .HAlign(HAlign_Center)
+                        .Padding(2.0)
+                        [
+                            currBtn.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        .HAlign(HAlign_Center)
+                        .Padding(2.0)
+                        [
+                            nextBtn.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        .HAlign(HAlign_Center)
+                        .Padding(2.0)
+                        [
+                            lastBtn.ToSharedRef()
+                        ]
+                    ]
                 ]
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(VAlign_Center)
-                .HAlign(HAlign_Right)
-                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                [
-                    lastBtn.ToSharedRef()
-                ]
+#pragma endregion
             ]
         ]
         + SVerticalBox::Slot()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
         .AutoHeight()
+#pragma region Title Bar & Exit
         [
             SNew(SBorder)
             .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
@@ -184,6 +211,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
                 ]
             ]
         ]
+#pragma endregion
     ];
 }
 
@@ -208,7 +236,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateFirstBtn() {
     auto widget = SNew(SButton)
         .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
         .TextStyle(FAppStyle::Get(), "DialogButtonText")
-        .Text(LOCTEXT("First Node", "<<"))
+        .Text(LOCTEXT("First Node", "|<"))
         .ToolTipText(LOCTEXT("FirstNodeTooltip", "Select First Node"))
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Center)
@@ -231,6 +259,20 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevBtn() {
      return widget;
 }
 
+TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateCurrBtn() {
+    auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
+    auto widget = SNew(SButton)
+        .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
+        .TextStyle(FAppStyle::Get(), "DialogButtonText")
+        .Text(LOCTEXT("Current Node", "o"))
+        .ToolTipText(LOCTEXT("CurrNodeTooltip", "Select and Apply Current Node"))
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Center)
+        .DesiredSizeScale(FVector2D(1.0f, 1.0f))
+        .OnClicked_UObject(edSubsys, &UStoryBoardEditorSubsystem::CurrentNode);
+    return widget;
+}
+
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNextBtn() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     auto widget = SNew(SButton)
@@ -251,7 +293,7 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateLastBtn() {
     auto widget = SNew(SButton)
         .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
         .TextStyle(FAppStyle::Get(), "DialogButtonText")
-        .Text(LOCTEXT("Last Node", ">>"))
+        .Text(LOCTEXT("Last Node", ">|"))
         .ToolTipText(LOCTEXT("LastNodeTooltip", "Select Last Node"))
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Center)

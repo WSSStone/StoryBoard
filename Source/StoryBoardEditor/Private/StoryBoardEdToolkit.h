@@ -36,6 +36,8 @@ private:
     TSharedPtr<SWidget> CreateFirstBtn();
 
     TSharedPtr<SWidget> CreatePrevBtn();
+
+    TSharedPtr<SWidget> CreateCurrBtn();
     
     TSharedPtr<SWidget> CreateNextBtn();
 

@@ -49,7 +49,10 @@ void UStoryBoardEdMode::ActorSelectionChangeNotify() {
     GEditor->GetSelectedActors()->GetSelectedObjects(AStoryNode::StaticClass(), selectedActors);
     if (!selectedActors.IsEmpty()) {
         auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
-        edSubsys->SetCurrentNode(Cast<AStoryNode>(selectedActors[0]));
+        auto actor = selectedActors[0];
+        if (selectedActors[0] != edSubsys->StoryNodeHelper->SelectedNode.Get()) {
+            edSubsys->SetCurrentNode(Cast<AStoryNode>(actor));
+        }
     }
 
     UEdMode::ActorSelectionChangeNotify();

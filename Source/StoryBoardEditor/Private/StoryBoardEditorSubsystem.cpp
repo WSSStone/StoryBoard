@@ -212,24 +212,28 @@ void UStoryBoardEditorSubsystem::ExitEdMode() {
     GLevelEditorModeTools().DeactivateMode(UStoryBoardEdMode::EM_StoryBoardEdModeId);
 }
 
-auto FocusActor = [](AActor* actor) {
-    FBox bounds = actor->GetComponentsBoundingBox(true);
+auto FocusActor = [](AActor* Actor) {
+    FBox bounds = Actor->GetComponentsBoundingBox(true);
 
     FLevelEditorViewportClient* viewport = static_cast<FLevelEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
     if (viewport) {
         viewport->FocusViewportOnBox(bounds);
-        viewport->SetViewportType(ELevelViewportType::LVT_Perspective);
+        // viewport->SetViewportType(ELevelViewportType::LVT_Perspective);
         viewport->Invalidate();
     }
-
-    GEditor->SelectNone(false, true);
-    GEditor->SelectActor(actor, true, false, true, true);
-    // in this case, refresh Details panel
-    GEditor->NoteSelectionChange();
 };
 
+auto SelectActor = [](AActor* Actor) {
+    GEditor->SelectNone(false, true);
+    GEditor->SelectActor(Actor, true, false, true, true);
+    // in this case, refresh Details panel
+    GEditor->NoteSelectionChange();
+    };
+
 FReply UStoryBoardEditorSubsystem::FirstNode() {
-    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr)->Node);
+    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr, true)->Node, false);
+
+    SelectActor(StoryNodeHelper->SelectedNode.Get());
     FocusActor(StoryNodeHelper->SelectedNode.Get());
 
     return FReply::Handled();
@@ -240,9 +244,19 @@ FReply UStoryBoardEditorSubsystem::PreviousNode() {
     TArray<TObjectPtr<AStoryNode>> arr;
     StoryNodeHelper->GetPrevStoryNodes(arr);
     if (StoryNodeHelper->SelectedNode != nullptr && !arr.IsEmpty()) {
-        SetCurrentNode(arr[0].Get());
-        FocusActor(StoryNodeHelper->SelectedNode.Get());
+        SetCurrentNode(arr[0].Get(), false);
+
+        SelectActor(StoryNodeHelper->SelectedNode.Get());
     }
+
+    return FReply::Handled();
+}
+
+FReply UStoryBoardEditorSubsystem::CurrentNode() {
+    auto node = StoryNodeHelper->SelectedNode.Get();
+
+    FocusActor(node);
+    SetCurrentScenario(node->Scenario.Get());
 
     return FReply::Handled();
 }
@@ -252,34 +266,38 @@ FReply UStoryBoardEditorSubsystem::NextNode() {
     TArray<TObjectPtr<AStoryNode>> arr; 
     StoryNodeHelper->GetNextStoryNodes(arr);
     if (StoryNodeHelper->SelectedNode != nullptr && !arr.IsEmpty()) {
-        SetCurrentNode(arr[0].Get());
-        FocusActor(StoryNodeHelper->SelectedNode.Get());
+        SetCurrentNode(arr[0].Get(), false);
+
+        SelectActor(StoryNodeHelper->SelectedNode.Get());
     }
 
     return FReply::Handled();
 }
 
 FReply UStoryBoardEditorSubsystem::LastNode() {
-    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr, false)->Node);
+    SetCurrentNode(StoryNodeHelper->BFSFurthestWrapper(nullptr, false)->Node, false);
+
+    SelectActor(StoryNodeHelper->SelectedNode.Get());
     FocusActor(StoryNodeHelper->SelectedNode.Get());
 
     return FReply::Handled();
 }
 
-FReply UStoryBoardEditorSubsystem::UISelectNode(AStoryNode* Node) {
-    SetCurrentNode(Node);
-    FocusActor(Node);
+FReply UStoryBoardEditorSubsystem::UISelectNode(AStoryNode* Node, bool bApplyScenario) {
+    SetCurrentNode(Node, bApplyScenario);
+
+    SelectActor(StoryNodeHelper->SelectedNode.Get());
 
     return FReply::Handled();
 }
 
-void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node) {
+void UStoryBoardEditorSubsystem::SetCurrentNode(AStoryNode* Node, bool bApplyScenario) {
     if (Node == nullptr) {
         return;
     }
 
     StoryNodeHelper->SelectedNode = Node;
-    if (Node) {
+    if (Node && bApplyScenario) {
         SetCurrentScenario(Node->Scenario.Get());
     }
 
@@ -626,31 +644,57 @@ UStoryScenario* FStoryNodeEditorHelper::BFSNearestPrevScenario() {
     return nullptr;
 }
 
-FStoryNodeWrapper* FStoryNodeEditorHelper::BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bFwd) {
-    FStoryNodeWrapper* ret = nullptr;
-
+FStoryNodeWrapper* FStoryNodeEditorHelper::BFSFurthestWrapper(FStoryNodeWrapper* Wrapper, bool bPrev) {
     if (Wrapper == nullptr) {
         Wrapper = StoryNodeWrappers.Find(SelectedNode.Get());
     }
-    
-    TQueue<FStoryNodeWrapper*> queue;
-    queue.Enqueue(Wrapper);
-    TSet<FStoryNodeWrapper*> history;
-    while (!queue.IsEmpty()) {
-        queue.Peek(ret);
-        queue.Pop();
-        history.Add(ret);
 
-        TArray<FStoryNodeWrapper*>* arrayPtr = bFwd ? &ret->PrevNodes : &ret->NextNodes;
-        for (auto wrapper : *arrayPtr) {
-            if (history.Contains(wrapper)) {
+    struct FDepthNode {
+        FStoryNodeWrapper* m_Wrapper {nullptr};
+        int m_Depth {0};
+    };
+
+    auto SelArray = [](FStoryNodeWrapper* wrapper, bool bPrev) -> TArray<FStoryNodeWrapper*>& {
+        return bPrev ? wrapper->PrevNodes : wrapper->NextNodes;
+    };
+    
+    TQueue<FDepthNode> queue;
+    queue.Enqueue({Wrapper, 0});
+    int maxDepth = 0;
+    TSet<FStoryNodeWrapper*> visited;
+    TArray<FDepthNode> lastLayer;
+
+    while (!queue.IsEmpty()) {
+        FDepthNode depthNode;
+        queue.Peek(depthNode);
+        queue.Pop();
+
+        FStoryNodeWrapper* curr = depthNode.m_Wrapper;
+        int depth = depthNode.m_Depth;
+
+        visited.Add(curr);
+
+        if (depth > maxDepth) {
+            maxDepth = depth;
+            lastLayer.Empty();
+        }
+
+        lastLayer.Add(depthNode);
+
+        TArray<FStoryNodeWrapper*>& array = SelArray(curr, bPrev);
+        for (auto wrapper : array) {
+            if (visited.Contains(wrapper)) {
                 continue;
             }
-            queue.Enqueue(wrapper);
+            queue.Enqueue({wrapper, depth + 1});
         }
     }
 
-    return ret;
+    lastLayer.Sort([&SelArray, &bPrev](const FDepthNode& a, const FDepthNode& b) {
+        return SelArray(a.m_Wrapper, bPrev).Num() < SelArray(b.m_Wrapper, bPrev).Num();
+    });
+
+    return lastLayer[0].m_Wrapper;
 }
 
 void FStoryNodeEditorHelper::GetPrevStoryNodes(TArray<TObjectPtr<AStoryNode>>& Ret) {
@@ -741,10 +785,7 @@ void FStoryBoardViewportDrawer::Tick(float DeltaTime) {
         return;
     }
 
-    if (Owner->StoryNodeHelper->SelectedNode != nullptr) {
-        DrawEdges();
-    }
-
+    DrawEdges();
     DrawHint();
 }
 
@@ -758,6 +799,10 @@ TStatId FStoryBoardViewportDrawer::GetStatId() const {
 }
 
 void FStoryBoardViewportDrawer::DrawEdges() {
+    if (Owner->StoryNodeHelper->SelectedNode == nullptr) {
+        return;
+    }
+
     auto cur = Owner->StoryNodeHelper->StoryNodeWrappers.Find(Owner->StoryNodeHelper->SelectedNode.Get());
     if (cur == nullptr || cur->Node == nullptr) {
         return;
