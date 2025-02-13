@@ -633,11 +633,12 @@ FStoryNodeWrapper* FStoryNodeEditorHelper::BFSFurthestWrapper(FStoryNodeWrapper*
         Wrapper = StoryNodeWrappers.Find(SelectedNode.Get());
     }
     
-    TArray<FStoryNodeWrapper*> queue {Wrapper};
+    TQueue<FStoryNodeWrapper*> queue;
+    queue.Enqueue(Wrapper);
     TSet<FStoryNodeWrapper*> history;
     while (!queue.IsEmpty()) {
-        ret = queue[0];
-        queue.RemoveAt(0);
+        queue.Peek(ret);
+        queue.Pop();
         history.Add(ret);
 
         TArray<FStoryNodeWrapper*>* arrayPtr = bFwd ? &ret->PrevNodes : &ret->NextNodes;
@@ -645,7 +646,7 @@ FStoryNodeWrapper* FStoryNodeEditorHelper::BFSFurthestWrapper(FStoryNodeWrapper*
             if (history.Contains(wrapper)) {
                 continue;
             }
-            queue.Add(wrapper);
+            queue.Enqueue(wrapper);
         }
     }
 
