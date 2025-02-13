@@ -21,6 +21,7 @@ FStoryBoardEdToolkit::FStoryBoardEdToolkit() {
 FStoryBoardEdToolkit::~FStoryBoardEdToolkit() {
     if (IsHosted() && ViewportOverlayWidget.IsValid()) {
         GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
+        ViewportOverlayWidget.Reset();
     }
 }
 
@@ -38,6 +39,7 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
 void FStoryBoardEdToolkit::OnNodeSelectedRedraw(FStoryNodeWrapper* Wrapper) {
     if (IsHosted() && ViewportOverlayWidget.IsValid()) {
         GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
+        ViewportOverlayWidget.Reset();
     }
 
     ArrangeWidget();
@@ -48,141 +50,141 @@ void FStoryBoardEdToolkit::OnNodeSelectedRedraw(FStoryNodeWrapper* Wrapper) {
 void FStoryBoardEdToolkit::ArrangeWidget() {
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
 
-    auto currentView = CreateCurrnetNodeView();
+    auto currentView  = CreateCurrnetNodeView();
     auto nextListView = CreateNextNodesView();
     auto prevListView = CreatePrevNodesView();
-    auto firstBtn = CreateFirstBtn();
-    auto nextBtn = CreateNextBtn();
-    auto prevBtn = CreatePrevBtn();
-    auto lastBtn = CreateLastBtn();
+    auto firstBtn     = CreateFirstBtn();
+    auto nextBtn      = CreateNextBtn();
+    auto prevBtn      = CreatePrevBtn();
+    auto lastBtn      = CreateLastBtn();
 
     SAssignNew(ViewportOverlayWidget, SHorizontalBox)
-        + SHorizontalBox::Slot()
+    + SHorizontalBox::Slot()
+    .HAlign(HAlign_Center)
+    .VAlign(VAlign_Bottom)
+    .Padding(FMargin(0.0, 0.0, 0.0, 15.0))
+    [
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot()
         .HAlign(HAlign_Center)
         .VAlign(VAlign_Bottom)
-        .Padding(FMargin(0.0, 0.0, 0.0, 15.0))
+        .MaxHeight(155.0)
         [
-            SNew(SVerticalBox)
-            + SVerticalBox::Slot()
-            .HAlign(HAlign_Center)
-            .VAlign(VAlign_Bottom)
-            .MaxHeight(155.0)
+            SNew(SBorder)
+            .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
+            .Padding(0.0)
             [
-                SNew(SBorder)
-                .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                .Padding(0.0)
+                SNew(SHorizontalBox)
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .HAlign(HAlign_Right)
+                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                 [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .HAlign(HAlign_Right)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+                    firstBtn.ToSharedRef()
+                ]
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .HAlign(HAlign_Right)
+                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+                [
+                    prevBtn.ToSharedRef()
+                ]
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .HAlign(HAlign_Center)
+                .VAlign(VAlign_Center)
+                [
+                    SNew(SBorder)
+                    .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
+                    .Padding(FMargin(2.0, 0.0, 2.0, 0.0))
                     [
-                        firstBtn.ToSharedRef()
-                    ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .HAlign(HAlign_Right)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                    [
-                        prevBtn.ToSharedRef()
-                    ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .HAlign(HAlign_Center)
-                    .VAlign(VAlign_Center)
-                    [
-                        SNew(SBorder)
-                        .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                        .Padding(FMargin(2.0, 0.0, 2.0, 0.0))
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .HAlign(HAlign_Center)
+                        .VAlign(VAlign_Center)
                         [
-                            SNew(SHorizontalBox)
-                            + SHorizontalBox::Slot()
-                            .AutoWidth()
-                            .HAlign(HAlign_Center)
-                            .VAlign(VAlign_Center)
-                            [
-                                prevListView.ToSharedRef()
-                            ]
-                            + SHorizontalBox::Slot()
-                            .AutoWidth()
-                            .HAlign(HAlign_Center)
-                            .VAlign(VAlign_Bottom)
-                            [
-                                currentView.ToSharedRef()
-                            ]
-                            + SHorizontalBox::Slot()
-                            .AutoWidth()
-                            .HAlign(HAlign_Center)
-                            .VAlign(VAlign_Center)
-                            [
-                                nextListView.ToSharedRef()
-                            ]
+                            prevListView.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .HAlign(HAlign_Center)
+                        .VAlign(VAlign_Bottom)
+                        [
+                            currentView.ToSharedRef()
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .HAlign(HAlign_Center)
+                        .VAlign(VAlign_Center)
+                        [
+                            nextListView.ToSharedRef()
                         ]
                     ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .HAlign(HAlign_Left)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                    [
-                        nextBtn.ToSharedRef()
-                    ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .HAlign(HAlign_Right)
-                    .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
-                    [
-                        lastBtn.ToSharedRef()
-                    ]
                 ]
-            ]
-            + SVerticalBox::Slot()
-            .HAlign(HAlign_Center)
-            .VAlign(VAlign_Bottom)
-            .AutoHeight()
-            [
-                SNew(SBorder)
-                .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
-                .Padding(8.f)
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .HAlign(HAlign_Left)
+                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
                 [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
-                    [
-                        SNew(SImage)
-                        .Image(FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode16").GetIcon())
-                    ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
-                    .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
-                    [
-                        SNew(STextBlock)
-                        .Text(FText::FromString("Story Board"))
-                    ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .Padding(FMargin(2.0, 0.0, 0.0, 0.0))
-                    [
-                        SNew(SButton)
-                        .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
-                        .TextStyle(FAppStyle::Get(), "DialogButtonText")
-                        .Text(LOCTEXT("ExitEdit", "Exit"))
-                        .ToolTipText(LOCTEXT("ExitTooltip", "Exit Story Board View"))
-                        .HAlign(HAlign_Center)
-                        .OnClicked_Lambda([&edSubsys]() {
-                            edSubsys->ExitEdMode();
-                            return FReply::Handled(); })
-                    ]
+                    nextBtn.ToSharedRef()
+                ]
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .HAlign(HAlign_Right)
+                .Padding(FMargin(0.0, 8.0, 0.0, 8.0))
+                [
+                    lastBtn.ToSharedRef()
                 ]
             ]
-        ];
+        ]
+        + SVerticalBox::Slot()
+        .HAlign(HAlign_Center)
+        .VAlign(VAlign_Bottom)
+        .AutoHeight()
+        [
+            SNew(SBorder)
+            .BorderImage(FAppStyle::Get().GetBrush("EditorViewport.OverlayBrush"))
+            .Padding(8.f)
+            [
+                SNew(SHorizontalBox)
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
+                [
+                    SNew(SImage)
+                    .Image(FSlateIconFinder::FindIcon("StoryBoardEditor.StoryBoardEdMode16").GetIcon())
+                ]
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                .Padding(FMargin(0.0, 0.0, 8.0, 0.0))
+                [
+                    SNew(STextBlock)
+                    .Text(FText::FromString("Story Board"))
+                ]
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .Padding(FMargin(2.0, 0.0, 0.0, 0.0))
+                [
+                    SNew(SButton)
+                    .ButtonStyle(FAppStyle::Get(), "PrimaryButton")
+                    .TextStyle(FAppStyle::Get(), "DialogButtonText")
+                    .Text(LOCTEXT("ExitEdit", "Exit"))
+                    .ToolTipText(LOCTEXT("ExitTooltip", "Exit Story Board View"))
+                    .HAlign(HAlign_Center)
+                    .OnClicked_Lambda([&edSubsys]() {
+                        edSubsys->ExitEdMode();
+                        return FReply::Handled(); })
+                ]
+            ]
+        ]
+    ];
 }
 
 FName FStoryBoardEdToolkit::GetToolkitFName() const {
@@ -394,13 +396,13 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateAssetThumbnailWidget(UObject* As
         return SNew(SBorder);
     }
 
-    FAssetThumbnailConfig ThumbnailConfig;
-    ThumbnailConfig.bAllowFadeIn = false;
-    ThumbnailConfig.bAllowHintText = false;
-    ThumbnailConfig.bAllowRealTimeOnHovered = false;
-    ThumbnailConfig.bForceGenericThumbnail = false;
+    FAssetThumbnailConfig thumbnailConfig;
+    thumbnailConfig.bAllowFadeIn = false;
+    thumbnailConfig.bAllowHintText = false;
+    thumbnailConfig.bAllowRealTimeOnHovered = false;
+    thumbnailConfig.bForceGenericThumbnail = false;
 
-    return thumbnail->MakeThumbnailWidget(ThumbnailConfig);
+    return thumbnail->MakeThumbnailWidget(thumbnailConfig);
 }
 
 TSharedPtr<SWidget> FStoryBoardEdToolkit::CreatePrevNodesView() {
@@ -448,11 +450,6 @@ TSharedPtr<SWidget> FStoryBoardEdToolkit::CreateNodeListView(const TArray<TObjec
         entryParams.ExtensionHook = NAME_None;
         entryParams.UserInterfaceActionType = EUserInterfaceActionType::Button;
         entryParams.EntryWidget = CreateNodeView(item.Get(), ImageSize::S20);
-
-        /*
-            .OnHovered_Lambda([edSubsys, node]() { edSubsys->SetHintNode(node); })
-            .OnUnhovered_UObject(edSubsys, &UStoryBoardEditorSubsystem::RemoveHintNode)
-        */
 
         menuBuilder.AddMenuEntry(entryParams);
     }
