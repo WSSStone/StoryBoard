@@ -22,11 +22,34 @@ public class StoryBoardSceneViewExtension : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-				"UnrealEd",
+				
 				"InputCore",
                 "EnhancedInput",
 				"Projects"
 			}
         );
+
+        // if is build with editor
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(
+                new string[]
+                {
+                    "UnrealEd",
+                    "Slate",
+                    "SlateCore",
+                    "EditorStyle",
+                    "PropertyEditor",
+                    "LevelEditor",
+                    "EditorWidgets",
+                    "AssetTools",
+                    "Kismet",
+                    "KismetWidgets",
+                    "GraphEditor",
+                    "BlueprintGraph",
+                    "ToolMenus",
+                }
+            );
+        }
 	}
 }
