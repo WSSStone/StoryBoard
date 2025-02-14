@@ -48,7 +48,7 @@ void UStoryBoardEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection
 }
 
 void UStoryBoardEditorSubsystem::Deinitialize() {
-    ExitEdMode();
+    // ExitEdMode();
 
     RemoveStoryAssetHelper();
 
