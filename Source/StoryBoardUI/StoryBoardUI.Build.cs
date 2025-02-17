@@ -15,8 +15,6 @@ public class StoryBoardUI : ModuleRules
                 "RHI",
                 "RenderCore",
                 "Renderer",
-                "Slate",
-                "SlateCore",
                 "StoryBoardRuntime"
             }
         );
@@ -25,6 +23,8 @@ public class StoryBoardUI : ModuleRules
             new string[]
             {
 				"InputCore",
+                "Slate",
+                "SlateCore",
                 "EnhancedInput",
 				"Projects"
 			}
