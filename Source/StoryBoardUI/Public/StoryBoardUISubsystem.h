@@ -26,7 +26,7 @@ public:
     void DisableSVE();
 
 #if WITH_EDITOR
-    virtual void PostUndo(bool bSuccess) override {};
+    virtual void PostUndo(bool bSuccess) override {}
 
     virtual void PostRedo(bool bSuccess) override {}
 #endif
