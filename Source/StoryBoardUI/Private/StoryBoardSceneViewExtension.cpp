@@ -1,5 +1,5 @@
 #include "StoryBoardSceneViewExtension.h"
-#include "StoryBoardSceneViewExtensionSubsystem.h"
+#include "StoryBoardUISubsystem.h"
 #include "StoryBoardSubsystem.h"
 
 #include "Containers/DynamicRHIResourceArray.h"
@@ -51,7 +51,7 @@ namespace {
 
 FStoryBoardSceneViewExtension::FStoryBoardSceneViewExtension(
     const FAutoRegister& AutoRegister,
-    UStoryBoardSceneViewExtensionSubsystem* InSubsystem)
+    UStoryBoardUISubsystem* InSubsystem)
     : FSceneViewExtensionBase(AutoRegister),
 	WorldSubsystem(InSubsystem) {}
 

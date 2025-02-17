@@ -1,8 +1,8 @@
 using UnrealBuildTool;
 
-public class StoryBoardSceneViewExtension : ModuleRules
+public class StoryBoardUI : ModuleRules
 {
-    public StoryBoardSceneViewExtension(ReadOnlyTargetRules Target) : base(Target)
+    public StoryBoardUI(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -15,6 +15,8 @@ public class StoryBoardSceneViewExtension : ModuleRules
                 "RHI",
                 "RenderCore",
                 "Renderer",
+                "Slate",
+                "SlateCore",
                 "StoryBoardRuntime"
             }
         );
@@ -22,7 +24,6 @@ public class StoryBoardSceneViewExtension : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-				
 				"InputCore",
                 "EnhancedInput",
 				"Projects"
@@ -36,8 +37,6 @@ public class StoryBoardSceneViewExtension : ModuleRules
                 new string[]
                 {
                     "UnrealEd",
-                    "Slate",
-                    "SlateCore",
                     "EditorStyle",
                     "PropertyEditor",
                     "LevelEditor",

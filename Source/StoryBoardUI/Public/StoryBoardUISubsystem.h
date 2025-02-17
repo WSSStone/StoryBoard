@@ -5,18 +5,18 @@
 #include "DelegatesDefinitions.h"
 #include "CoreMinimal.h"
 
-#include "StoryBoardSceneViewExtensionSubsystem.generated.h"
+#include "StoryBoardUISubsystem.generated.h"
 
 #if WITH_EDITOR
-class FStoryBoardSceneViewExtensionEditorUndoClient : public FEditorUndoClient {
+class FStoryBoardUIEditorUndoClient : public FEditorUndoClient {
 };
 #else
-class FStoryBoardSceneViewExtensionEditorUndoClient {
+class FStoryBoardUIEditorUndoClient {
 };
 #endif
 
 UCLASS()
-class STORYBOARDSCENEVIEWEXTENSION_API UStoryBoardSceneViewExtensionSubsystem : public UWorldSubsystem, public FStoryBoardSceneViewExtensionEditorUndoClient {
+class STORYBOARDUI_API UStoryBoardUISubsystem : public UWorldSubsystem, public FStoryBoardUIEditorUndoClient {
     GENERATED_BODY()
 public:
     void Initialize(FSubsystemCollectionBase& Collection) override;

@@ -14,7 +14,7 @@
         "LoadingPhase": "Default"
       },
       {
-        "Name": "StoryBoardSceneViewExtension",
+        "Name": "StoryBoardUI",
         "Type": "Runtime",
         "LoadingPhase": "Default"
       },

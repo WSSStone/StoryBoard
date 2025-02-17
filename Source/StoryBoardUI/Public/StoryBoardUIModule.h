@@ -2,7 +2,7 @@
 
 #include "Modules/ModuleManager.h"
 
-class FStoryBoardSVExtensionModule : public IModuleInterface
+class FStoryBoardUIModule : public IModuleInterface
 {
 public:
     virtual void StartupModule() override;

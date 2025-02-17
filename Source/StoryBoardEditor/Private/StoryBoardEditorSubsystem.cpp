@@ -4,7 +4,7 @@
 #include "StoryBoardEdMode.h"
 #include "StoryBoardCommands.h"
 
-#include "StoryBoardSceneViewExtensionSubsystem.h"
+#include "StoryBoardUISubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -190,13 +190,13 @@ void UStoryBoardEditorSubsystem::OnEnterEdMode() {
     StoryNodeHelper->SelectedNode = Cast<AStoryNode>(actor);
 
     auto world = GEditor->GetEditorWorldContext().World();
-    auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
+    auto sveSubsys = world->GetSubsystem<UStoryBoardUISubsystem>();
     sveSubsys->BindIndicatorDelegate(EdSetHindNodeEvent);
 }
 
 void UStoryBoardEditorSubsystem::OnExitEdMode() {
     auto world = GEditor->GetEditorWorldContext().World();
-    auto sveSubsys = world->GetSubsystem<UStoryBoardSceneViewExtensionSubsystem>();
+    auto sveSubsys = world->GetSubsystem<UStoryBoardUISubsystem>();
     sveSubsys->UnbindIndicatorDelegate(EdSetHindNodeEvent);
 
     RemoveStoryBoardViewportDrawer();

@@ -18,8 +18,8 @@ public class StoryBoardEditor : ModuleRules
 				"AssetRegistry",
                 "EditorFramework",
                 "StoryBoardRuntime",
-                "StoryBoardSceneViewExtension"
-            }
+				"StoryBoardUI"
+			}
         );
 
         PrivateDependencyModuleNames.AddRange(

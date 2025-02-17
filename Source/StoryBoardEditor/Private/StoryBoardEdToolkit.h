@@ -55,5 +55,6 @@ private:
 
     TSharedPtr<SWidget> CreateAssetThumbnailWidget(UObject* Asset, int32 Size);
 
-    TSharedPtr<SWidget> ViewportOverlayWidget;
+    TSharedPtr<SWidget> OverlayConsoleWidget;
+    TSharedPtr<SWidget> OverlayIndicatorWidget;
 };

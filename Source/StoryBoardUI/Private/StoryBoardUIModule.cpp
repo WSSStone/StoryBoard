@@ -1,20 +1,20 @@
-#include "StoryBoardSceneViewExtensionModule.h"
+#include "StoryBoardUIModule.h"
 
 #include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
 #include "ShaderCore.h"
 
 
-void FStoryBoardSVExtensionModule::StartupModule()
+void FStoryBoardUIModule::StartupModule()
 {
     // map plugin shader path
     FString shaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("StoryBoard"))->GetBaseDir(), TEXT("Shaders"));
     AddShaderSourceDirectoryMapping(TEXT("/StoryBoard"), shaderDir);
 }
 
-void FStoryBoardSVExtensionModule::ShutdownModule()
+void FStoryBoardUIModule::ShutdownModule()
 {
 
 }
 
-IMPLEMENT_MODULE(FStoryBoardSVExtensionModule, StoryBoardSceneViewExtension)
+IMPLEMENT_MODULE(FStoryBoardUIModule, StoryBoardUI)

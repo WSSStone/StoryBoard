@@ -19,9 +19,9 @@ FStoryBoardEdToolkit::FStoryBoardEdToolkit() {
 }
 
 FStoryBoardEdToolkit::~FStoryBoardEdToolkit() {
-    if (IsHosted() && ViewportOverlayWidget.IsValid()) {
-        GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
-        ViewportOverlayWidget.Reset();
+    if (IsHosted() && OverlayConsoleWidget.IsValid()) {
+        GetToolkitHost()->RemoveViewportOverlayWidget(OverlayConsoleWidget.ToSharedRef());
+        OverlayConsoleWidget.Reset();
     }
 }
 
@@ -33,18 +33,18 @@ void FStoryBoardEdToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost,
 
     ArrangeWidget();
 
-    GetToolkitHost()->AddViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
+    GetToolkitHost()->AddViewportOverlayWidget(OverlayConsoleWidget.ToSharedRef());
 }
 
 void FStoryBoardEdToolkit::OnNodeSelectedRedraw(FStoryNodeWrapper* Wrapper) {
-    if (IsHosted() && ViewportOverlayWidget.IsValid()) {
-        GetToolkitHost()->RemoveViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
-        ViewportOverlayWidget.Reset();
+    if (IsHosted() && OverlayConsoleWidget.IsValid()) {
+        GetToolkitHost()->RemoveViewportOverlayWidget(OverlayConsoleWidget.ToSharedRef());
+        OverlayConsoleWidget.Reset();
     }
 
     ArrangeWidget();
 
-    GetToolkitHost()->AddViewportOverlayWidget(ViewportOverlayWidget.ToSharedRef());
+    GetToolkitHost()->AddViewportOverlayWidget(OverlayConsoleWidget.ToSharedRef());
 }
 
 void FStoryBoardEdToolkit::ArrangeWidget() {
@@ -59,7 +59,7 @@ void FStoryBoardEdToolkit::ArrangeWidget() {
     auto nextBtn      = CreateNextBtn();
     auto lastBtn      = CreateLastBtn();
 
-    SAssignNew(ViewportOverlayWidget, SHorizontalBox)
+    SAssignNew(OverlayConsoleWidget, SHorizontalBox)
     + SHorizontalBox::Slot()
     .HAlign(HAlign_Center)
     .VAlign(VAlign_Bottom)

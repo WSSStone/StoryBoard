@@ -1,21 +1,21 @@
-#include "StoryBoardSceneViewExtensionSubsystem.h"
+#include "StoryBoardUISubsystem.h"
 #include "StoryBoardSceneViewExtension.h"
 
 #define LOCTEXT_NAMESPACE "StoryBoardSceneViewExtensionSubsystem"
 
-void UStoryBoardSceneViewExtensionSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
+void UStoryBoardUISubsystem::Initialize(FSubsystemCollectionBase& Collection) {
     Super::Initialize(Collection);
 
 	StoryBoardSceneViewExtension = FSceneViewExtensions::NewExtension<FStoryBoardSceneViewExtension>(this);
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::Deinitialize() {
+void UStoryBoardUISubsystem::Deinitialize() {
 	DisableSVE();
 
     Super::Deinitialize();
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::DisableSVE() {
+void UStoryBoardUISubsystem::DisableSVE() {
 	{
 		StoryBoardSceneViewExtension->IsActiveThisFrameFunctions.Empty();
 
@@ -51,15 +51,15 @@ void UStoryBoardSceneViewExtensionSubsystem::DisableSVE() {
 	FlushRenderingCommands();
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::BindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
-    Delegate.AddUObject(this, &UStoryBoardSceneViewExtensionSubsystem::HandleStoryNodeWrapperHint);
+void UStoryBoardUISubsystem::BindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
+    Delegate.AddUObject(this, &UStoryBoardUISubsystem::HandleStoryNodeWrapperHint);
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::UnbindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
+void UStoryBoardUISubsystem::UnbindIndicatorDelegate(FStoryNodeWrapperDelegate& Delegate) {
     Delegate.RemoveAll(this);
 }
 
-void UStoryBoardSceneViewExtensionSubsystem::HandleStoryNodeWrapperHint(FStoryNodeWrapper* Wrapper) {
+void UStoryBoardUISubsystem::HandleStoryNodeWrapperHint(FStoryNodeWrapper* Wrapper) {
     HintWrapper = Wrapper;
 }
 

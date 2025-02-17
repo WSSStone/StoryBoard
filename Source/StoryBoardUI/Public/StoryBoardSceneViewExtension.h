@@ -1,16 +1,14 @@
 #pragma once
 
-#include "StoryBoardSceneViewExtensionSubsystem.h"
-
 #include "CoreMinimal.h"
 #include "SceneViewExtension.h"
 
-class UStoryBoardSceneViewExtensionSubsystem;
+class UStoryBoardUISubsystem;
 
 class FStoryBoardSceneViewExtension : public FSceneViewExtensionBase
 {
 public:
-    FStoryBoardSceneViewExtension(const FAutoRegister& AutoRegister, UStoryBoardSceneViewExtensionSubsystem* InSubsystem);
+    FStoryBoardSceneViewExtension(const FAutoRegister& AutoRegister, UStoryBoardUISubsystem* InSubsystem);
 	
 #pragma region FSceneViewExtensionBase Interface
     virtual void SetupViewFamily(FSceneViewFamily& InViewFamily) override {};
@@ -22,5 +20,5 @@ public:
 #pragma endregion
     void Invalidate();
 private:
-    UStoryBoardSceneViewExtensionSubsystem* WorldSubsystem;
+    UStoryBoardUISubsystem* WorldSubsystem;
 };
