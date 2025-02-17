@@ -4,6 +4,8 @@
 #include "StoryBoardEditorStyle.h"
 
 #include "Selection.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
 
 #define LOCTEXT_NAMESPACE "StoryBoardEditorMode"
 
@@ -23,6 +25,13 @@ UStoryBoardEdMode::~UStoryBoardEdMode() {}
 
 void UStoryBoardEdMode::Enter() {
     UEdMode::Enter();
+
+    const FText infoText = FText::Format(LOCTEXT("EnterEdMode", "Enter {0} Edit Mode"), FText::FromString("Story Board"));
+    FNotificationInfo notificationInfo(infoText);
+    notificationInfo.ExpireDuration = 2.0f;
+    notificationInfo.bFireAndForget = true;
+    notificationInfo.bUseThrobber = true;
+    FSlateNotificationManager::Get().AddNotification(notificationInfo);
 
     UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
 }
