@@ -27,7 +27,7 @@ void UStoryBoardSubsystem::Initialize(FSubsystemCollectionBase& Collection) {
 
     TryLoadDefaultScenario(world->GetMapName());
     if (DefaultScenario) {
-        SetupScene(DefaultScenario, EExecuteFlag::GAME_BEGIN);
+        SetupScene(DefaultScenario, EExecuteFlag::GAME);
     }
 }
 
@@ -49,7 +49,7 @@ void UStoryBoardSubsystem::HandleInitializedActors(const FActorsInitializedParam
     auto scenario = StoryNodeHelper->BFSNearestPrevScenario();
 
     if (scenario) {
-        SetupScene(scenario, EExecuteFlag::GAME_BEGIN);
+        SetupScene(scenario, EExecuteFlag::GAME);
         return;
     }
 }
@@ -87,7 +87,7 @@ void UStoryBoardSubsystem::ExecuteCommands(const TArray<FStatusCommand>& Console
     }
 
     for (const FStatusCommand& cmd : ConsoleCommands) {
-        if (((uint8)ExecuteFlag & (uint8)cmd.ExecuteFlag) == 0 || cmd.Command.IsEmpty()) {
+        if ((ExecuteFlag & cmd.ExecuteFlag) == EExecuteFlag::NONE || cmd.Command.IsEmpty()) {
             continue;
         }
 
@@ -99,7 +99,7 @@ void UStoryBoardSubsystem::SetupActorVisibilities(const TArray<FActorVisibility>
     for (const FActorVisibility& actorVisibility : ActorVisibilities) {
         AActor* actor = actorVisibility.Actor.Get();
 
-        if (((uint8)ExecuteFlag & (uint8)actorVisibility.ExecuteFlag) == 0 || actor == nullptr) {
+        if ((ExecuteFlag & actorVisibility.ExecuteFlag) == EExecuteFlag::NONE || actor == nullptr) {
             continue;
         }
 
@@ -127,7 +127,7 @@ void UStoryBoardSubsystem::SetupDataLayerStatus(const TArray<FDataLayerStatus>& 
     for (const FDataLayerStatus& dataLayerStatus : DataLayerStatuses) {
         const UDataLayerInstance* inst = dataLayerManager->GetDataLayerInstanceFromAsset(dataLayerStatus.DataLayerAsset.Get());
 
-        if (((uint8)ExecuteFlag & (uint8)dataLayerStatus.ExecuteFlag) == 0 || inst == nullptr) {
+        if ((ExecuteFlag & dataLayerStatus.ExecuteFlag) == EExecuteFlag::NONE || inst == nullptr) {
             continue;
         }
 

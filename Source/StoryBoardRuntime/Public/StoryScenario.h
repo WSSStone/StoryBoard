@@ -6,20 +6,23 @@
 
 #include "StoryScenario.generated.h"
 
-UENUM(BlueprintType)
+UENUM(BlueprintType, meta=(Bitflags, UseEnumValuesAsMaskValuesInEditor="true"))
 enum class EExecuteFlag : uint8 {
-    NONE = 0u UMETA(Hidden),
-    GAME_TICK = 1u,
-    GAME_BEGIN = (1u << 2) - 1,
-    EDITOR = (1u << 3) - 1,
-    MAX = (1u << 4) - 1 UMETA(Hidden),
+    NONE = 0 UMETA(Hidden),
+    GAME_TICK = 1,
+    GAME_BEGIN = 1 << 1,
+    GAME = GAME_TICK | GAME_BEGIN,
+    EDITOR = 1 << 2,
+    ALL = EDITOR | GAME,
 };
+
+ENUM_CLASS_FLAGS(EExecuteFlag)
 
 USTRUCT(BlueprintType)
 struct FDataLayerStatus {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, meta=(Bitmask, BitmaskEnum=EExecuteFlag))
     EExecuteFlag ExecuteFlag;
 
     // Get current level's DataLayerInstance corresponding to this DataLayerAsset.
@@ -64,7 +67,7 @@ USTRUCT(BlueprintType)
 struct FActorVisibility {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, meta = (Bitmask, BitmaskEnum = EExecuteFlag))
     EExecuteFlag ExecuteFlag;
 
     UPROPERTY(EditAnywhere)
@@ -89,7 +92,7 @@ USTRUCT(BlueprintType)
 struct FStatusCommand {
     GENERATED_BODY()
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, meta = (Bitmask, BitmaskEnum = EExecuteFlag))
     EExecuteFlag ExecuteFlag;
 
     UPROPERTY(EditAnywhere)
