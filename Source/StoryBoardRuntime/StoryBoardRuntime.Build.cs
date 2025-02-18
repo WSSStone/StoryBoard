@@ -12,7 +12,6 @@ public class StoryBoardRuntime : ModuleRules
                 "Core",
                 "CoreUObject",
                 "Engine",
-                "InputCore"
             }
         );
 

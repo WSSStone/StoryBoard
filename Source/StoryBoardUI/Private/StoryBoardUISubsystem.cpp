@@ -1,5 +1,4 @@
 #include "StoryBoardUISubsystem.h"
-#include "StoryBoardSceneViewExtension.h"
 
 #define LOCTEXT_NAMESPACE "StoryBoardSceneViewExtensionSubsystem"
 

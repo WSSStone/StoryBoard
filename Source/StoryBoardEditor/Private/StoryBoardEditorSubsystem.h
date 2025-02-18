@@ -111,7 +111,7 @@ public:
     TUniquePtr<FStoryAssetHelper> StoryAssetHelper;
     
 private:
-    bool isEdMode { false };
+    bool isEdMode {false};
 
     TUniquePtr<FStoryBoardViewportDrawer> StoryBoardViewportDrawer;
 

@@ -25,7 +25,6 @@ namespace {
     } IndicatorContext;
 
     struct FDrawTexture2DInfo {
-        
         FMatrix2x2      Rotation;
         FVector2D       Offset;
         FVector2D       Scale;
