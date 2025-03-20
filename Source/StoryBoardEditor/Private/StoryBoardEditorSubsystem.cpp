@@ -571,8 +571,23 @@ FStoryNodeEditorHelper::FStoryNodeEditorHelper(UWorld* World) {
     BuildGraph();
 
     FEditorDelegates::OnNewActorsDropped.AddLambda([this](const TArray<UObject*>& uobjects, const TArray<AActor*>& actors) {
-        if (!actors.IsEmpty()) ReallocateStoryNodes(actors[0]->GetWorld());
-        });
+        if (actors.IsEmpty()) {
+            return;
+        }
+        
+        bool reallocFlag = false;
+        for (auto actor : actors) {
+            AStoryNode* node = Cast<AStoryNode>(actor);
+            if (node) {
+                reallocFlag = true;
+                break;
+            }
+        }
+
+        if (reallocFlag) {
+            ReallocateStoryNodes(actors[0]->GetWorld());
+        }
+    });
     FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnEditPasteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);
     FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FStoryNodeEditorHelper::OnStoryNodeAddedOrRemoved);

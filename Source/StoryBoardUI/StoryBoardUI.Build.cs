@@ -5,8 +5,10 @@ public class StoryBoardUI : ModuleRules
     public StoryBoardUI(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		// bUsePrecompiled = true;
+		PrecompileForTargets = PrecompileTargetsType.Any;
 
-        PublicDependencyModuleNames.AddRange(
+		PublicDependencyModuleNames.AddRange(
             new string[]
             {
                 "Core",
