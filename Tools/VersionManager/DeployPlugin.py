@@ -145,7 +145,7 @@ class deployer:
 
         try:
             process = subprocess.Popen([unreal_build_tool, '-projectfiles', f'-project={project_file}', '-game', '-engnie'], shell=True)
-            time.sleep(10)
+            time.sleep(15)
 
             # Check if the process is still running
             if process.poll() is None:
