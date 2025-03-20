@@ -5,6 +5,8 @@ public class StoryBoardEditor : ModuleRules
     public StoryBoardEditor(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        // bUsePrecompiled = true;
+        PrecompileForTargets = PrecompileTargetsType.Any;
 
         PublicDependencyModuleNames.AddRange(
             new string[]
@@ -43,6 +45,6 @@ public class StoryBoardEditor : ModuleRules
 				"DataLayerEditor",
                 "EnhancedInput",
 			}
-        );
+        );        
 	}
 }
