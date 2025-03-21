@@ -1,5 +1,27 @@
 import os, sys, subprocess, configparser, time
 
+class transaction:   
+    def __init__(self, command:list, name:str="transaction", timeout:float=1.0, checking_interval:float=0.1):
+        self.command = command
+        self.timeout = timeout
+
+    def __call__(self):
+        try:
+            start_time = time.time()
+
+            process = subprocess.Popen(self.command, shell=True)
+
+            # loop checking every 0.1 seconds if the process is still running, if exceed 15 seconds, terminate it
+            while process.poll() is None:
+                time.sleep(checking_interval)
+                if time.time() - start_time > timeout:
+                    print(f"[{name}]: process last over {timeout} seconds, terminating it.")
+                    process.terminate()
+                    break
+
+        except subprocess.CalledProcessError as e:
+            print(f"[{name}]: Error occurred: {e}")
+
 class deployer:
     def __init__(self):
         self._get_paths()
