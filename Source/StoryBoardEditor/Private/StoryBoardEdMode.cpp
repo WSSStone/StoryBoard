@@ -26,14 +26,14 @@ UStoryBoardEdMode::~UStoryBoardEdMode() {}
 void UStoryBoardEdMode::Enter() {
     UEdMode::Enter();
 
+    UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
+
     const FText infoText = FText::Format(LOCTEXT("EnterEdMode", "Enter {0} Edit Mode"), FText::FromString("Story Board"));
     FNotificationInfo notificationInfo(infoText);
     notificationInfo.ExpireDuration = 2.0f;
     notificationInfo.bFireAndForget = true;
     notificationInfo.bUseThrobber = true;
     FSlateNotificationManager::Get().AddNotification(notificationInfo);
-
-    UStoryBoardEditorSubsystem::EdSetCurrentNodeEvent.AddRaw(static_cast<FStoryBoardEdToolkit*>(Toolkit.Get()), &FStoryBoardEdToolkit::OnNodeSelectedRedraw);
 }
 
 void UStoryBoardEdMode::Exit() {
@@ -41,6 +41,13 @@ void UStoryBoardEdMode::Exit() {
 
     auto edSubsys = GEditor->GetEditorSubsystem<UStoryBoardEditorSubsystem>();
     edSubsys->OnExitEdMode();
+
+    const FText infoText = FText::Format(LOCTEXT("ExitEdMode", "Exit {0} Edit Mode"), FText::FromString("Story Board"));
+    FNotificationInfo notificationInfo(infoText);
+    notificationInfo.ExpireDuration = 2.0f;
+    notificationInfo.bFireAndForget = true;
+    notificationInfo.bUseThrobber = true;
+    FSlateNotificationManager::Get().AddNotification(notificationInfo);
 
     UEdMode::Exit();
 }
