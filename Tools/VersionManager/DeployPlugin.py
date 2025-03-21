@@ -149,7 +149,7 @@ def main(arg):
     elif arg == 'pre':
         plugin_deployer.deploy_precompiled()
 
-    # plugin_deployer.recompile_project()
+    plugin_deployer.recompile_project()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2 or sys.argv[1] not in ['dev', 'pre']:
