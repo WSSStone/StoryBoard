@@ -150,7 +150,7 @@ void UStoryBoardEditorSubsystem::SetupDefaultScenario() {
 }
 
 void UStoryBoardEditorSubsystem::OnScenarioPropChange(UStoryScenario* Scenario) {
-    if (CurrentScenario != nullptr && Scenario == CurrentScenario.Get()) {
+    if (isEdMode && CurrentScenario != nullptr && Scenario == CurrentScenario.Get()) {
         SetupScenario(Scenario);
     }
 }
@@ -201,6 +201,9 @@ void UStoryBoardEditorSubsystem::OnExitEdMode() {
 
     RemoveStoryBoardViewportDrawer();
     RemoveStoryNodeHelper();
+    if (CurrentScenario != nullptr && CurrentScenario->OnStoryScenarioChanged.IsBound()) {
+        CurrentScenario->OnStoryScenarioChanged.Unbind();
+    }
     isEdMode = false;
 }
 
