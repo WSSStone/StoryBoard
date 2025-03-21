@@ -2,10 +2,10 @@ import os, sys, subprocess, configparser, time
 
 class deployer:
     def __init__(self):
-        self.get_paths()
+        self._get_paths()
         self.plugin_dir = os.getcwd()
 
-    def get_paths(self) -> str:
+    def _get_paths(self) -> str:
         # Read the configuration file for 'Destination' directory
         config = configparser.ConfigParser()
         
@@ -14,10 +14,10 @@ class deployer:
         self.ver = config['Version']['Engine']
         self.engine_dir = config['Engine'][self.ver]
 
-    def remove_folder(self, dst:str):
+    def _remove_folder(self, dst:str, seconds:float=1.0):
         try:
             process = subprocess.Popen(['rmdir', '/S', '/Q', dst], shell=True)
-            time.sleep(1)
+            time.sleep(seconds)
 
             # Check if the process is still running
             if process.poll() is None:
@@ -39,7 +39,7 @@ class deployer:
         dst = os.path.join(self.destination, os.path.basename(self.plugin_dir))
 
         if os.path.exists(self.destination):
-            self.remove_folder(dst)
+            self._remove_folder(dst)
 
         # make a soft link
         try:
@@ -63,7 +63,7 @@ class deployer:
         dst = os.path.join(self.destination, os.path.basename(self.plugin_dir))
 
         if os.path.exists(self.destination):
-            self.remove_folder(dst)
+            self._remove_folder(dst)
 
         # copy the plugin directory to the destination
         try:
@@ -82,7 +82,7 @@ class deployer:
         git_dir = os.path.join(dst, '.git')
         if os.path.exists(git_dir):
             print(f"Removing folder {git_dir}")
-            self.remove_folder(git_dir)
+            self._remove_folder(git_dir, seconds=0.1)
 
         # remove the .gitignore file
         gitignore_file = os.path.join(dst, '.gitignore')
@@ -94,13 +94,13 @@ class deployer:
         vscode_dir = os.path.join(dst, '.vscode')
         if os.path.exists(vscode_dir):
             print(f"Removing folder {vscode_dir}")
-            self.remove_folder(vscode_dir)
+            self._remove_folder(vscode_dir, seconds=0.1)
 
         # remove Tools directory
         tools_dir = os.path.join(dst, 'Tools')
         if os.path.exists(tools_dir):
             print(f"Removing folder {tools_dir}")
-            self.remove_folder(tools_dir)
+            self._remove_folder(tools_dir, seconds=0.1)
         
         # remove .pdb files under dst\Binaries\Win64\
         binaries_dir = os.path.join(dst, 'Binaries', 'Win64')
@@ -119,7 +119,7 @@ class deployer:
             private_dir = os.path.join(fldr, 'Private')
             if os.path.exists(private_dir):
                 print(f"Removing folder {private_dir}")
-                self.remove_folder(private_dir)
+                self._remove_folder(private_dir, seconds=0.1)
 
             # set .Build.cs file bUsePrecompiled = true
             build_file = os.path.join(fldr, subdir + '.Build.cs')
@@ -147,11 +147,14 @@ class deployer:
             process = subprocess.Popen([unreal_build_tool, '-projectfiles', f'-project={project_file}', '-game', '-engnie'], shell=True)
             time.sleep(15)
 
-            # Check if the process is still running
-            if process.poll() is None:
-                print(f"Process is still running, terminating it.")
-                # Terminate the process if it's still running
-                process.terminate()
+            # loop checking every 0.1 seconds if the process is still running, if exceed 15 seconds, terminate it
+            while process.poll() is None:
+                time.sleep(0.1)
+                if time.time() - start_time > threshold:
+                    print(f"Process last over {threshold} seconds, terminating it.")
+                    process.terminate()
+                    break
+
         except subprocess.CalledProcessError as e:
             print(f"Error occurred while trying to generate project files: {e}")
 
