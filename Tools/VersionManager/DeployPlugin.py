@@ -1,26 +1,29 @@
 import os, sys, subprocess, configparser, time
 
 class transaction:   
-    def __init__(self, command:list, name:str="transaction", timeout:float=1.0, checking_interval:float=0.1):
+    def __init__(self, command:list, name:str="transaction", timeout:float=1.0, checking_interval:float=0.05, shell:bool=True):
         self.command = command
         self.timeout = timeout
+        self.name = name
+        self.checking_interval = checking_interval
+        self.shell = shell
 
     def __call__(self):
         try:
             start_time = time.time()
 
-            process = subprocess.Popen(self.command, shell=True)
+            process = subprocess.Popen(self.command, shell=self.shell)
 
             # loop checking every 0.1 seconds if the process is still running, if exceed 15 seconds, terminate it
             while process.poll() is None:
-                time.sleep(checking_interval)
-                if time.time() - start_time > timeout:
-                    print(f"[{name}]: process last over {timeout} seconds, terminating it.")
+                time.sleep(self.checking_interval)
+                if time.time() - start_time > self.timeout:
+                    print(f"[{self.name}]: process last over {self.timeout} seconds, terminating it.")
                     process.terminate()
                     break
 
         except subprocess.CalledProcessError as e:
-            print(f"[{name}]: Error occurred: {e}")
+            print(f"[{self.name}]: Error occurred: {e}")
 
 class deployer:
     def __init__(self):
@@ -37,20 +40,8 @@ class deployer:
         self.engine_dir = config['Engine'][self.ver]
 
     def _remove_folder(self, dst:str, seconds:float=1.0):
-        try:
-            process = subprocess.Popen(['rmdir', '/S', '/Q', dst], shell=True)
-            time.sleep(seconds)
-
-            # Check if the process is still running
-            if process.poll() is None:
-                print(f"Process is still running, terminating it.")
-                # Terminate the process if it's still running
-                process.terminate()  # or process.kill() for forceful termination
-            else:
-                print(f"Process finished with return code {process.returncode}")
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error occurred while trying to remove directory {dst}: {e}")
+        command = ['rmdir', '/S', '/Q', dst]
+        transaction(command, name="Remove Dir/File (s)", timeout=seconds)()
 
     def deploy_development(self):        
         if not os.path.exists(self.destination):
@@ -64,17 +55,8 @@ class deployer:
             self._remove_folder(dst)
 
         # make a soft link
-        try:
-            process = subprocess.Popen(['mklink', '/J', dst, self.plugin_dir], shell=True)
-            time.sleep(2)
-
-            # Check if the process is still running
-            if process.poll() is None:
-                print(f"Process is still running, terminating it.")
-                # Terminate the process if it's still running
-                process.terminate()
-        except  subprocess.CalledProcessError as e:
-            print(f"Error occurred while trying to create soft link {dst}: {e}")
+        command = ['mklink', '/J', dst, self.plugin_dir]
+        transaction(command, name=f"Create Soft Link for {dst}", timeout=2)()
 
     def deploy_precompiled(self):
         if not os.path.exists(self.destination):
@@ -88,23 +70,14 @@ class deployer:
             self._remove_folder(dst)
 
         # copy the plugin directory to the destination
-        try:
-            process = subprocess.Popen(['robocopy', self.plugin_dir, dst, '/E'], shell=True)
-            time.sleep(2)
-
-            # Check if the process is still running
-            if process.poll() is None:
-                print(f"Process is still running, terminating it.")
-                # Terminate the process if it's still running
-                process.terminate()
-        except subprocess.CalledProcessError as e:
-            print(f"Error occurred while trying to copy directory {dst}: {e}")
+        command = ['robocopy', self.plugin_dir, dst, '/E']
+        transaction(command, name=f"Copy Plugin Directory to {dst}", timeout=2)()
 
         # remove the .git directory
         git_dir = os.path.join(dst, '.git')
         if os.path.exists(git_dir):
             print(f"Removing folder {git_dir}")
-            self._remove_folder(git_dir, seconds=0.1)
+            self._remove_folder(git_dir, seconds=0.5)
 
         # remove the .gitignore file
         gitignore_file = os.path.join(dst, '.gitignore')
@@ -165,20 +138,8 @@ class deployer:
         project_dir = os.path.dirname(self.destination)
         project_file = os.path.join(project_dir, f'{os.path.basename(project_dir)}.uproject')
 
-        try:
-            process = subprocess.Popen([unreal_build_tool, '-projectfiles', f'-project={project_file}', '-game', '-engnie'], shell=True)
-            time.sleep(15)
-
-            # loop checking every 0.1 seconds if the process is still running, if exceed 15 seconds, terminate it
-            while process.poll() is None:
-                time.sleep(0.1)
-                if time.time() - start_time > threshold:
-                    print(f"Process last over {threshold} seconds, terminating it.")
-                    process.terminate()
-                    break
-
-        except subprocess.CalledProcessError as e:
-            print(f"Error occurred while trying to generate project files: {e}")
+        command = [unreal_build_tool, '-projectfiles', f'-project={project_file}', '-game', '-engnie']
+        transaction(command, name="Generate Project Files", timeout=15)()
 
 def main(arg):
     plugin_deployer = deployer()
@@ -188,7 +149,7 @@ def main(arg):
     elif arg == 'pre':
         plugin_deployer.deploy_precompiled()
 
-    plugin_deployer.recompile_project()
+    # plugin_deployer.recompile_project()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2 or sys.argv[1] not in ['dev', 'pre']:
